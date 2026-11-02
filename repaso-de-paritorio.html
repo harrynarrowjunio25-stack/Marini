@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repaso de paritorio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: sticky header + tab rail; each tab = interactive figure (left) + clinical notes (right) */
+:root {
+  --paper: #F7F6F9;
+  --surface: #FFFFFF;
+  --sunk: #F0EDF2;
+  --ink: #241C29;
+  --muted: #6B6170;
+  --line: #E3DEE6;
+  --accent: #8A2D58;
+  --accent-soft: #F5E6EE;
+  --teal: #1C8476;
+  --teal-soft: #E1F2EF;
+  --ok: #2E8452; --ok-soft: #E3F3E9;
+  --warn: #B87908; --warn-soft: #FBF0D9;
+  --crit: #C0353E; --crit-soft: #FBE4E5;
+  --skin: #EBC1AC; --bone: #E8DFD3; --bone-line: #B9A994;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --radius: 12px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #141117; --surface: #1D1821; --sunk: #262029; --ink: #EEE8F1; --muted: #A99FAE; --line: #352D3B;
+    --accent: #E384B0; --accent-soft: #3A2231; --teal: #52C2B2; --teal-soft: #193330;
+    --ok: #5CC489; --ok-soft: #1B3326; --warn: #E7B14A; --warn-soft: #3A2E15; --crit: #F07178; --crit-soft: #3D1F22;
+    --skin: #C99A86; --bone: #4A4139; --bone-line: #8C7C69;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #141117; --surface: #1D1821; --sunk: #262029; --ink: #EEE8F1; --muted: #A99FAE; --line: #352D3B;
+  --accent: #E384B0; --accent-soft: #3A2231; --teal: #52C2B2; --teal-soft: #193330;
+  --ok: #5CC489; --ok-soft: #1B3326; --warn: #E7B14A; --warn-soft: #3A2E15; --crit: #F07178; --crit-soft: #3D1F22;
+  --skin: #C99A86; --bone: #4A4139; --bone-line: #8C7C69;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.2; }
+h1 { font-size: 26px; }
+h2 { font-size: 24px; }
+h3 { font-size: 16px; font-family: var(--font-body); font-weight: 700; }
+p { margin: 0; }
+.mono, .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+header.top { background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+.top-inner { max-width: 1240px; margin: 0 auto; padding: 14px 20px 0; }
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.brand p { color: var(--muted); font-size: 14px; }
+nav.tabs { display: flex; gap: 2px; overflow-x: auto; margin-top: 10px; scrollbar-width: thin; }
+nav.tabs a { flex: none; text-decoration: none; color: var(--muted); font-weight: 600; font-size: 14px; padding: 10px 14px; border-bottom: 3px solid transparent; display: flex; align-items: center; gap: 8px; border-radius: 8px 8px 0 0; }
+nav.tabs a:hover { color: var(--ink); background: var(--sunk); }
+nav.tabs a[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+nav.tabs .n { font-family: var(--font-mono); font-size: 11px; color: inherit; opacity: .7; }
+main { max-width: 1240px; margin: 0 auto; padding: 22px 20px 48px; }
+section.panel { display: block; margin-bottom: 40px; }
+.js section.panel { display: none; margin-bottom: 0; }
+.js section.panel.active { display: block; }
+.panel-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.panel-head p { color: var(--muted); max-width: 70ch; margin-top: 4px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.grid.even { grid-template-columns: 1fr 1fr; }
+@media (max-width: 900px) { .grid, .grid.even { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card.sunk { background: var(--sunk); border-color: transparent; }
+.label { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; background: var(--sunk); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: transparent; color: var(--ink); font: 600 13px var(--font-body); padding: 7px 11px; border-radius: 8px; cursor: pointer; }
+.seg button:hover { background: var(--surface); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+:root[data-theme="dark"] .seg button[aria-pressed="true"] { color: #1D1821; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .seg button[aria-pressed="true"] { color: #1D1821; } }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+.field { display: grid; grid-template-columns: 170px 1fr; gap: 10px; align-items: center; }
+@media (max-width: 520px) { .field { grid-template-columns: 1fr; gap: 4px; } }
+.field > label { font-weight: 600; font-size: 14px; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+input[type="number"], select { font: 500 14px var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; width: 100%; max-width: 220px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 999px; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.crit { background: var(--crit-soft); color: var(--crit); }
+.pill.info { background: var(--teal-soft); color: var(--teal); }
+.result { border-radius: var(--radius); padding: 16px 18px; display: flex; gap: 16px; align-items: center; }
+.result.ok { background: var(--ok-soft); } .result.warn { background: var(--warn-soft); } .result.crit { background: var(--crit-soft); } .result.info { background: var(--teal-soft); }
+.result .big { font-family: var(--font-mono); font-size: 40px; font-weight: 600; line-height: 1; }
+.result.ok .big, .result.ok h3 { color: var(--ok); } .result.warn .big, .result.warn h3 { color: var(--warn); } .result.crit .big, .result.crit h3 { color: var(--crit); } .result.info .big, .result.info h3 { color: var(--teal); }
+.result p { color: var(--ink); font-size: 14px; }
+ul.clean { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+ul.clean li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 14px; }
+ul.clean li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 7px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+td.num { white-space: nowrap; }
+.table-wrap { overflow-x: auto; }
+svg { display: block; max-width: 100%; height: auto; }
+.figure { background: var(--sunk); border-radius: 10px; padding: 8px; }
+.kv { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.kv div { background: var(--sunk); border-radius: 10px; padding: 10px 12px; }
+.kv b { display: block; font-family: var(--font-mono); font-size: 20px; color: var(--accent); }
+.kv span { font-size: 13px; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); }
+.alerts { display: flex; flex-direction: column; gap: 8px; }
+.alert { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 10px; background: var(--crit-soft); font-size: 14px; }
+.alert.okay { background: var(--ok-soft); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 7px 13px; font: 600 13px var(--font-body); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+:root[data-theme="dark"] .chip[aria-pressed="true"] { color: #141117; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip[aria-pressed="true"] { color: #141117; } }
+canvas { width: 100%; display: block; border-radius: 8px; }
+.quiz-opt { text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 10px; padding: 12px 14px; font: 500 15px var(--font-body); cursor: pointer; width: 100%; }
+.quiz-opt:hover:not(:disabled) { border-color: var(--accent); }
+.quiz-opt.right { background: var(--ok-soft); border-color: var(--ok); }
+.quiz-opt.wrong { background: var(--crit-soft); border-color: var(--crit); }
+.btn { border: 0; background: var(--accent); color: #fff; font: 700 14px var(--font-body); padding: 10px 16px; border-radius: 10px; cursor: pointer; }
+:root[data-theme="dark"] .btn { color: #141117; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn { color: #141117; } }
+.btn.ghost { background: var(--sunk); color: var(--ink); }
+.progress { height: 6px; background: var(--sunk); border-radius: 99px; overflow: hidden; }
+.progress i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+.flash { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.flip { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 16px; min-height: 130px; cursor: pointer; text-align: left; color: var(--ink); font: inherit; display: flex; flex-direction: column; gap: 8px; }
+.flip .q { font-weight: 700; }
+.flip .a { display: none; color: var(--teal); font-weight: 600; }
+.flip[aria-expanded="true"] { background: var(--teal-soft); border-color: var(--teal); }
+.flip[aria-expanded="true"] .a { display: block; }
+.flip[aria-expanded="true"] .hint { display: none; }
+.hint { font-size: 12px; color: var(--muted); margin-top: auto; }
+footer { max-width: 1240px; margin: 0 auto; padding: 0 20px 32px; color: var(--muted); font-size: 12.5px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <h1>Repaso de paritorio</h1>
+      <p>Herramienta interactiva de repaso para matronas · basada en OMS 2018/2020, FIGO 2015 y GPC de Atención al Parto Normal</p>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Temas">
+      <a href="#pelvis" role="tab" data-tab="pelvis"><span class="n">01</span>Pelvis y descenso</a>
+      <a href="#cuello" role="tab" data-tab="cuello"><span class="n">02</span>Cuello · Bishop</a>
+      <a href="#parto" role="tab" data-tab="parto"><span class="n">03</span>Guía de Cuidados OMS</a>
+      <a href="#rctg" role="tab" data-tab="rctg"><span class="n">04</span>RCTG · FIGO</a>
+      <a href="#analgesia" role="tab" data-tab="analgesia"><span class="n">05</span>Dolor y analgesia</a>
+      <a href="#alumbramiento" role="tab" data-tab="alumbramiento"><span class="n">06</span>Alumbramiento · HPP</a>
+      <a href="#perine" role="tab" data-tab="perine"><span class="n">07</span>Periné</a>
+      <a href="#neonato" role="tab" data-tab="neonato"><span class="n">08</span>Recién nacido</a>
+      <a href="#puerperio" role="tab" data-tab="puerperio"><span class="n">09</span>Puerperio</a>
+      <a href="#repaso" role="tab" data-tab="repaso"><span class="n">10</span>Autoevaluación</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- 01 PELVIS -->
+<section class="panel" id="p-pelvis" role="tabpanel">
+  <div class="panel-head"><div><h2>Pelvis, planos y descenso fetal</h2><p>Mueve la altura de la presentación y cambia la actitud de la cabeza para ver qué plano alcanza y qué diámetro se enfrenta a la pelvis.</p></div></div>
+  <div class="grid">
+    <div class="card">
+      <div class="field"><label for="st">Estación (De Lee)</label><input type="range" id="st" min="-4" max="4" step="1" value="-2"></div>
+      <div class="figure"><svg id="pelvisSvg" viewBox="0 0 520 380" role="img" aria-label="Esquema del canal del parto con planos de Hodge"></svg></div>
+      <div class="kv">
+        <div><b id="stOut">−2</b><span>Estación</span></div>
+        <div><b id="hodgeOut">II</b><span>Plano de Hodge</span></div>
+        <div><b id="engOut" style="font-size:16px">Apoyada</b><span>Grado de descenso</span></div>
+      </div>
+    </div>
+    <div class="stack">
+      <div class="card">
+        <h3>Actitud de la cabeza y diámetro presentado</h3>
+        <div class="seg" id="attSeg" role="group" aria-label="Actitud"></div>
+        <svg id="diamSvg" viewBox="0 0 440 150" role="img" aria-label="Comparación de diámetros"></svg>
+        <div class="result" id="attRes"></div>
+      </div>
+      <div class="card">
+        <h3>Diámetros pélvicos de referencia</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Estrecho</th><th>Diámetro</th><th>cm</th></tr></thead>
+          <tbody>
+            <tr><td>Superior</td><td>Conjugado obstétrico (AP)</td><td class="num">≈ 11</td></tr>
+            <tr><td>Superior</td><td>Transverso</td><td class="num">≈ 13</td></tr>
+            <tr><td>Medio</td><td>Biespinoso (el menor)</td><td class="num">≈ 10</td></tr>
+            <tr><td>Inferior</td><td>Bituberoso</td><td class="num">≈ 11</td></tr>
+            <tr><td>Inferior</td><td>Subsacro-subpubiano</td><td class="num">≈ 11,5</td></tr>
+          </tbody></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 BISHOP -->
+<section class="panel" id="p-cuello" role="tabpanel">
+  <div class="panel-head"><div><h2>Test de Bishop</h2><p>Selecciona los hallazgos de la exploración. La puntuación y la orientación del método de inducción se actualizan al momento.</p></div></div>
+  <div class="grid">
+    <div class="card" id="bishopForm"></div>
+    <div class="stack">
+      <div class="result" id="bishopRes"></div>
+      <div class="card">
+        <h3>Cuello uterino (corte esquemático)</h3>
+        <div class="figure"><svg id="cervixSvg" viewBox="0 0 300 220" role="img" aria-label="Cuello uterino según borramiento y dilatación"></svg></div>
+        <p class="note">Rosa: pared uterina y cuello. Línea verde: orificio cervical externo. Círculo: polo cefálico.</p>
+      </div>
+      <div class="card sunk">
+        <h3>Métodos de maduración e inducción</h3>
+        <ul class="clean">
+          <li><span><b>Bishop desfavorable:</b> dinoprostona vaginal, misoprostol o sonda con balón.</span></li>
+          <li><span><b>Bishop favorable:</b> amniotomía y/o oxitocina IV en perfusión creciente.</span></li>
+          <li><span>Monitorización continua durante la inducción farmacológica. Vigilar taquisistolia (&gt; 5 contracciones en 10 min).</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 03 LCG -->
+<section class="panel" id="p-parto" role="tabpanel">
+  <div class="panel-head"><div><h2>Guía de Cuidados del Trabajo de Parto (OMS 2020)</h2><p>Introduce los valores de una valoración. Cada dato fuera de umbral se marca como alerta, igual que en la columna de alertas de la guía.</p></div></div>
+  <div class="grid">
+    <div class="card">
+      <div class="label">Progreso</div>
+      <div class="field"><label for="lcgPar">Paridad</label><select id="lcgPar"><option value="n">Nulípara</option><option value="m">Multípara</option></select></div>
+      <div class="field"><label for="lcgStage">Etapa</label><select id="lcgStage"><option value="1">Primera etapa (fase activa)</option><option value="2">Segunda etapa</option></select></div>
+      <div class="field" id="cmRow"><label for="lcgCm">Dilatación actual</label><select id="lcgCm"><option>5</option><option>6</option><option selected>7</option><option>8</option><option>9</option></select></div>
+      <div class="field"><label for="lcgH" id="lcgHLabel">Horas en esta dilatación</label><input type="number" id="lcgH" min="0" max="12" step="0.5" value="2"></div>
+      <div class="label" style="margin-top:6px">Bienestar fetal</div>
+      <div class="field"><label for="lcgFhr">FCF basal (lpm)</label><input type="number" id="lcgFhr" value="142"></div>
+      <div class="field"><label for="lcgDec">Deceleraciones</label><select id="lcgDec"><option value="N">No</option><option value="E">Precoces</option><option value="V">Variables</option><option value="L">Tardías</option></select></div>
+      <div class="field"><label for="lcgLa">Líquido amniótico</label><select id="lcgLa"><option value="C">Claro</option><option value="M1">Meconial +</option><option value="M2">Meconial ++</option><option value="M3">Meconial +++ (espeso)</option><option value="B">Sanguinolento</option></select></div>
+      <div class="label" style="margin-top:6px">Dinámica y madre</div>
+      <div class="field"><label for="lcgCtx">Contracciones / 10 min</label><input type="number" id="lcgCtx" value="4"></div>
+      <div class="field"><label for="lcgDur">Duración (s)</label><input type="number" id="lcgDur" value="45"></div>
+      <div class="field"><label for="lcgPulse">Pulso materno</label><input type="number" id="lcgPulse" value="88"></div>
+      <div class="field"><label for="lcgSbp">PA sistólica</label><input type="number" id="lcgSbp" value="118"></div>
+      <div class="field"><label for="lcgDbp">PA diastólica</label><input type="number" id="lcgDbp" value="74"></div>
+      <div class="field"><label for="lcgTemp">Temperatura (°C)</label><input type="number" id="lcgTemp" step="0.1" value="36.8"></div>
+    </div>
+    <div class="stack">
+      <div class="result" id="lcgRes"></div>
+      <div class="alerts" id="lcgAlerts"></div>
+      <div class="card">
+        <h3>Umbral de tiempo por centímetro (primera etapa)</h3>
+        <svg id="lcgChart" viewBox="0 0 440 210" role="img" aria-label="Umbrales de tiempo por centímetro"></svg>
+        <p class="note">Superar el umbral no obliga a intervenir: indica que hay que reevaluar y documentar el plan.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 04 RCTG -->
+<section class="panel" id="p-rctg" role="tabpanel">
+  <div class="panel-head"><div><h2>Interpretación del RCTG (FIGO 2015)</h2><p>Combina los parámetros y observa el trazado simulado de 20 minutos y su clasificación.</p></div></div>
+  <div class="card" style="margin-bottom:18px">
+    <canvas id="ctg" height="360" aria-label="Trazado cardiotocográfico simulado"></canvas>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="field"><label for="ctgBase">Línea de base: <span class="mono" id="ctgBaseOut">140</span> lpm</label><input type="range" id="ctgBase" min="80" max="190" value="140"></div>
+      <div class="field"><label for="ctgVar">Variabilidad</label><select id="ctgVar">
+        <option value="normal" selected>5–25 lpm</option>
+        <option value="redShort">&lt; 5 lpm, menos de 50 min</option>
+        <option value="redLong">&lt; 5 lpm, más de 50 min</option>
+        <option value="incr">&gt; 25 lpm (saltatoria) &gt; 30 min</option>
+        <option value="sin">Patrón sinusoidal &gt; 30 min</option>
+      </select></div>
+      <div class="field"><label for="ctgDec">Deceleraciones</label><select id="ctgDec">
+        <option value="none">Ninguna</option>
+        <option value="early">Precoces</option>
+        <option value="varIso">Variables aisladas</option>
+        <option value="varRep">Variables repetitivas</option>
+        <option value="late">Tardías repetitivas &gt; 30 min</option>
+        <option value="prol">Prolongada &gt; 5 min</option>
+      </select></div>
+      <div class="field"><label for="ctgAcc">Aceleraciones</label><select id="ctgAcc"><option value="1">Presentes</option><option value="0">Ausentes</option></select></div>
+    </div>
+    <div class="stack">
+      <div class="result" id="ctgRes"></div>
+      <div class="card sunk">
+        <h3>Fisiopatología de las deceleraciones</h3>
+        <ul class="clean">
+          <li><span><b>Precoces:</b> en espejo con la contracción; compresión cefálica.</span></li>
+          <li><span><b>Variables:</b> caída brusca en V; compresión funicular, las más frecuentes.</span></li>
+          <li><span><b>Tardías:</b> inicio y nadir después del acmé; respuesta quimiorrefleja a la hipoxemia.</span></li>
+          <li><span><b>Prolongada:</b> &gt; 3 min; si supera 5 min con FCF &lt; 80 lpm y baja variabilidad, suele requerir actuación inmediata.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 05 ANALGESIA -->
+<section class="panel" id="p-analgesia" role="tabpanel">
+  <div class="panel-head"><div><h2>Vías del dolor y bloqueos</h2><p>Elige una etapa o una técnica para ver los segmentos medulares implicados.</p></div></div>
+  <div class="grid">
+    <div class="card">
+      <div class="chips" id="painChips"></div>
+      <div class="figure"><svg id="spineSvg" viewBox="0 0 520 470" role="img" aria-label="Segmentos medulares"></svg></div>
+    </div>
+    <div class="stack">
+      <div class="result info" id="painRes"></div>
+      <div class="card">
+        <h3>Comparativa de analgesia</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Técnica</th><th>Eficacia</th><th>Vigilar</th></tr></thead>
+          <tbody>
+            <tr><td>Epidural</td><td><span class="pill ok">Alta</span></td><td>Hipotensión, fiebre, retención urinaria, prurito; expulsivo más largo</td></tr>
+            <tr><td>Óxido nitroso 50 %</td><td><span class="pill warn">Moderada</span></td><td>Náuseas, mareo</td></tr>
+            <tr><td>Opioides IV/IM</td><td><span class="pill warn">Baja-moderada</span></td><td>Sedación; depresión respiratoria neonatal</td></tr>
+            <tr><td>Bloqueo pudendo</td><td><span class="pill info">Solo expulsivo</span></td><td>No cubre la dilatación</td></tr>
+          </tbody></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 06 HPP -->
+<section class="panel" id="p-alumbramiento" role="tabpanel">
+  <div class="panel-head"><div><h2>Alumbramiento y hemorragia posparto</h2><p>Repasa las causas con la regla de las 4 T y calcula el índice de shock a pie de cama.</p></div></div>
+  <div class="grid even">
+    <div class="card">
+      <h3>Las 4 T de la hemorragia posparto</h3>
+      <div class="chips" id="tChips"></div>
+      <svg id="tSvg" viewBox="0 0 440 60" role="img" aria-label="Frecuencia aproximada de cada causa"></svg>
+      <div class="result info" id="tRes"></div>
+      <h3>Manejo activo del alumbramiento</h3>
+      <ul class="clean">
+        <li><span><b>Oxitocina 10 UI</b> IM o IV lenta tras el nacimiento.</span></li>
+        <li><span><b>Pinzamiento del cordón</b> no antes de 1 minuto si el recién nacido está bien.</span></li>
+        <li><span><b>Tracción controlada</b> del cordón con contratracción suprapúbica, por profesional entrenada.</span></li>
+        <li><span>Placenta retenida si no se expulsa en <b>30 min</b> con manejo activo.</span></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Índice de shock (FC / PAS)</h3>
+      <div class="field"><label for="siHr">Frecuencia cardiaca: <span class="mono" id="siHrOut">96</span></label><input type="range" id="siHr" min="50" max="160" value="96"></div>
+      <div class="field"><label for="siSbp">PA sistólica: <span class="mono" id="siSbpOut">112</span></label><input type="range" id="siSbp" min="60" max="160" value="112"></div>
+      <div class="result" id="siRes"></div>
+      <svg id="siSvg" viewBox="0 0 440 70" role="img" aria-label="Escala del índice de shock"></svg>
+      <p class="note">Definición de HPP: pérdida ≥ 500 ml tras parto vaginal o ≥ 1.000 ml tras cesárea, o cualquier pérdida con inestabilidad hemodinámica. La gestante compensa bien: la taquicardia y el índice de shock alertan antes que la hipotensión.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 07 PERINE -->
+<section class="panel" id="p-perine" role="tabpanel">
+  <div class="panel-head"><div><h2>Clasificación de los desgarros perineales</h2><p>Selecciona un grado para ver qué estructuras quedan afectadas (clasificación RCOG / Sultan).</p></div></div>
+  <div class="grid">
+    <div class="card">
+      <div class="seg" id="tearSeg" role="group" aria-label="Grado de desgarro"></div>
+      <div class="figure"><svg id="tearSvg" viewBox="0 0 520 330" role="img" aria-label="Capas del periné"></svg></div>
+    </div>
+    <div class="stack">
+      <div class="result" id="tearRes"></div>
+      <div class="card sunk">
+        <h3>Prevención de lesiones del esfínter</h3>
+        <ul class="clean">
+          <li><span>Masaje perineal prenatal desde la semana 34–35 en nulíparas.</span></li>
+          <li><span>Compresas calientes y salida controlada de la cabeza en el expulsivo.</span></li>
+          <li><span>Episiotomía restrictiva; si se realiza, mediolateral a 60° de la línea media.</span></li>
+          <li><span>Tacto rectal sistemático tras la reparación para descartar lesión del esfínter.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 NEONATO -->
+<section class="panel" id="p-neonato" role="tabpanel">
+  <div class="panel-head"><div><h2>Test de Apgar y primeros cuidados</h2><p>Puntúa cada signo y compara la valoración al minuto y a los 5 minutos.</p></div></div>
+  <div class="grid">
+    <div class="card">
+      <div class="seg" id="apgarTime" role="group" aria-label="Momento"></div>
+      <div class="stack" id="apgarForm"></div>
+    </div>
+    <div class="stack">
+      <div class="result" id="apgarRes"></div>
+      <div class="card">
+        <h3>Evolución</h3>
+        <svg id="apgarSvg" viewBox="0 0 440 150" role="img" aria-label="Apgar al minuto y a los 5 minutos"></svg>
+      </div>
+      <div class="card sunk">
+        <h3>Primera hora</h3>
+        <ul class="clean">
+          <li><span>Piel con piel inmediato e ininterrumpido; secado y gorro.</span></li>
+          <li><span>Pinzamiento tardío del cordón (≥ 1 min).</span></li>
+          <li><span>Inicio de lactancia en la primera hora.</span></li>
+          <li><span>Vitamina K 1 mg IM y profilaxis ocular; identificación.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 PUERPERIO -->
+<section class="panel" id="p-puerperio" role="tabpanel">
+  <div class="panel-head"><div><h2>Puerperio: involución y loquios</h2><p>Desplaza el día posparto para ver la altura uterina esperada, el tipo de loquios y los hitos a vigilar.</p></div></div>
+  <div class="grid">
+    <div class="card">
+      <div class="field"><label for="pDay">Día posparto: <span class="mono" id="pDayOut">3</span></label><input type="range" id="pDay" min="0" max="42" value="3"></div>
+      <div class="figure"><svg id="uterusSvg" viewBox="0 0 520 300" role="img" aria-label="Altura del fondo uterino"></svg></div>
+      <svg id="lochiaSvg" viewBox="0 0 520 70" role="img" aria-label="Línea temporal de los loquios"></svg>
+    </div>
+    <div class="stack">
+      <div class="kv">
+        <div><b id="fundusOut">−3 cm</b><span>Fondo respecto al ombligo</span></div>
+        <div><b id="lochiaOut">Rubra</b><span>Loquios</span></div>
+      </div>
+      <div class="card" id="milestones"></div>
+      <div class="card sunk">
+        <h3>Signos de alarma</h3>
+        <ul class="clean">
+          <li><span>Empapar una compresa por hora o coágulos grandes.</span></li>
+          <li><span>Fiebre ≥ 38 °C, loquios malolientes, útero doloroso o subinvolución.</span></li>
+          <li><span>Dolor o edema unilateral en la pierna; disnea; dolor torácico.</span></li>
+          <li><span>Cefalea intensa, visión borrosa o PA ≥ 140/90.</span></li>
+          <li><span>Ánimo bajo más de 2 semanas o ideas de autolesión.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 REPASO -->
+<section class="panel" id="p-repaso" role="tabpanel">
+  <div class="panel-head"><div><h2>Autoevaluación</h2><p>Diez preguntas al azar de todos los temas, con explicación al responder. Debajo, tarjetas de memoria para repasar cifras clave.</p></div><button class="btn ghost" id="quizRestart">Nueva ronda</button></div>
+  <div class="grid">
+    <div class="card" id="quizBox"></div>
+    <div class="card"><h3>Tarjetas de cifras clave</h3><p class="note">Pulsa una tarjeta para ver la respuesta.</p><div class="flash" id="flash"></div></div>
+  </div>
+</section>
+</main>
+<footer>Material de repaso. No sustituye los protocolos de tu centro. Fuentes: OMS, Recomendaciones para los cuidados durante el parto (2018) y WHO Labour Care Guide (2020); FIGO, Consenso de monitorización fetal intraparto (2015); Ministerio de Sanidad, GPC sobre la Atención al Parto Normal (2010); RCOG Green-top Guideline 29.</footer>
+
+<script>
+document.documentElement.classList.add("js");
+const $ = (s, r = document) => r.querySelector(s);
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs = {}, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) { const v = String(attrs[k]); if (v.includes("var(")) e.style.setProperty(k, v); else e.setAttribute(k, v); } if (parent) parent.appendChild(e); return e; }
+function svgText(parent, x, y, t, o = {}) { const e = el("text", Object.assign({ x, y, fill: "var(--ink)", "font-size": 13, "font-family": "var(--font-body)" }, o), parent); e.textContent = t; return e; }
+function seg(container, options, current, onPick) {
+  container.innerHTML = "";
+  options.forEach(([val, label]) => {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.setAttribute("aria-pressed", String(val === current));
+    b.addEventListener("click", () => { [...container.children].forEach((c) => c.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); onPick(val); });
+    container.appendChild(b);
+  });
+}
+function setResult(node, level, big, title, text) {
+  node.className = "result " + level;
+  node.innerHTML = (big !== null ? `<div class="big">${big}</div>` : "") + `<div class="stack" style="gap:4px"><h3>${title}</h3><p>${text}</p></div>`;
+}
+
+/* ---------- Tabs ---------- */
+const tabs = [...document.querySelectorAll("nav.tabs a")];
+const redraws = {};
+function show(id) {
+  if (!document.getElementById("p-" + id)) id = "pelvis";
+  tabs.forEach((a) => a.setAttribute("aria-selected", String(a.dataset.tab === id)));
+  document.querySelectorAll("section.panel").forEach((p) => p.classList.toggle("active", p.id === "p-" + id));
+  if (redraws[id]) redraws[id]();
+}
+window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+show(location.hash.slice(1) || "pelvis");
+
+/* ---------- 01 Pelvis ---------- */
+(function () {
+  const svg = $("#pelvisSvg"), st = $("#st");
+  const yIII = 200, k = 26, x0 = 260;
+  const planes = [["I", "Promontorio–pubis", yIII - 3 * k - 8], ["II", "Borde inf. del pubis", yIII - 1.5 * k], ["III", "Espinas ciáticas", yIII], ["IV", "Punta del cóccix", yIII + 3 * k]];
+  function draw() {
+    const s = +st.value; svg.innerHTML = "";
+    // canal walls
+    el("path", { d: `M120 20 C150 80 175 140 190 ${yIII} C200 250 215 300 225 360 L120 360 Z`, fill: "var(--bone)", stroke: "var(--bone-line)", "stroke-width": 2 }, svg);
+    el("path", { d: `M400 20 C370 80 345 140 330 ${yIII} C320 250 305 300 295 360 L400 360 Z`, fill: "var(--bone)", stroke: "var(--bone-line)", "stroke-width": 2 }, svg);
+    el("polygon", { points: `190,${yIII - 8} 206,${yIII} 190,${yIII + 8}`, fill: "var(--accent)" }, svg);
+    el("polygon", { points: `330,${yIII - 8} 314,${yIII} 330,${yIII + 8}`, fill: "var(--accent)" }, svg);
+    planes.forEach(([n, lab, y], i) => {
+      el("line", { x1: 120, x2: 400, y1: y, y2: y, stroke: i === 2 ? "var(--accent)" : "var(--muted)", "stroke-width": i === 2 ? 2.5 : 1.2, "stroke-dasharray": i === 2 ? "" : "6 5" }, svg);
+      svgText(svg, 410, y + 4, "Hodge " + n, { "font-weight": 700, fill: i === 2 ? "var(--accent)" : "var(--ink)" });
+      svgText(svg, 410, y + 19, lab, { "font-size": 10.5, fill: "var(--muted)" });
+    });
+    for (let i = -4; i <= 4; i++) { const y = yIII + i * k; el("line", { x1: 90, x2: 100, y1: y, y2: y, stroke: "var(--muted)" }, svg); svgText(svg, 52, y + 4, (i > 0 ? "+" : i < 0 ? "−" : "") + Math.abs(i), { "font-family": "var(--font-mono)", "font-size": 12, fill: i === s ? "var(--accent)" : "var(--muted)", "font-weight": i === s ? 700 : 400 }); }
+    svgText(svg, 20, 16, "Estación", { "font-size": 11, fill: "var(--muted)" });
+    const R = 52, low = yIII + s * k, cy = low - R;
+    el("circle", { cx: x0, cy, r: R, fill: "var(--skin)", stroke: "var(--accent)", "stroke-width": 2 }, svg);
+    el("line", { x1: x0 - R, x2: x0 + R, y1: cy, y2: cy, stroke: "var(--teal)", "stroke-width": 2, "stroke-dasharray": "4 4" }, svg);
+    svgText(svg, x0 - 30, cy - 6, "biparietal", { "font-size": 10.5, fill: "var(--teal)" });
+    el("circle", { cx: x0, cy: low, r: 4, fill: "var(--accent)" }, svg);
+    $("#stOut").textContent = (s > 0 ? "+" : s < 0 ? "−" : "") + Math.abs(s);
+    $("#hodgeOut").textContent = s <= -3 ? "I" : s <= -1 ? "II" : s <= 2 ? "III" : "IV";
+    $("#engOut").textContent = s <= -4 ? "Móvil" : s === -3 ? "Insinuada" : s <= -1 ? "Fija" : s <= 2 ? "Encajada" : "Coronando";
+  }
+  st.addEventListener("input", draw); draw();
+
+  const att = { flex: ["Flexión completa", "Suboccipitobregmático", 9.5, "Vértice: el menor diámetro. Favorable."], ind: ["Flexión indiferente", "Occipitofrontal", 11.5, "Sincipucio: progreso más lento; favorece la rotación posterior."], frente: ["Deflexión de frente", "Occipitomentoniano", 13.5, "Mayor que cualquier diámetro pélvico: parto vaginal habitualmente imposible."], cara: ["Deflexión de cara", "Submentobregmático", 9.5, "Posible por vía vaginal solo en mentoanterior."] };
+  const dsvg = $("#diamSvg");
+  function drawAtt(key) {
+    const [name, d, cm, txt] = att[key]; dsvg.innerHTML = "";
+    const sc = (v) => 40 + (v / 14) * 370;
+    [["Biespinoso", 10, "var(--muted)"], ["Conjugado obstétrico", 11, "var(--muted)"], [d, cm, cm > 11 ? "var(--crit)" : "var(--teal)"]].forEach(([lab, v, col], i) => {
+      const y = 14 + i * 44;
+      el("rect", { x: 40, y, width: sc(v) - 40, height: 18, rx: 4, fill: col, opacity: i < 2 ? 0.35 : 1 }, dsvg);
+      svgText(dsvg, 40, y + 34, lab, { "font-size": 12, fill: "var(--muted)" });
+      svgText(dsvg, sc(v) + 6, y + 14, String(v).replace(".", ",") + " cm", { "font-family": "var(--font-mono)", "font-size": 12, "font-weight": 600 });
+    });
+    setResult($("#attRes"), cm > 11 ? "crit" : key === "ind" || key === "cara" ? "warn" : "ok", null, `${name}: ${d} (${String(cm).replace(".", ",")} cm)`, txt);
+  }
+  seg($("#attSeg"), [["flex", "Flexión"], ["ind", "Indiferente"], ["frente", "Frente"], ["cara", "Cara"]], "flex", drawAtt); drawAtt("flex");
+})();
+
+/* ---------- 02 Bishop ---------- */
+(function () {
+  const params = [
+    ["dil", "Dilatación (cm)", ["0", "1–2", "3–4", "≥ 5"]],
+    ["borr", "Borramiento (%)", ["0–30", "40–50", "60–70", "≥ 80"]],
+    ["alt", "Altura (estación)", ["−3", "−2", "−1 / 0", "+1 / +2"]],
+    ["cons", "Consistencia", ["Dura", "Media", "Blanda"]],
+    ["pos", "Posición", ["Posterior", "Media", "Anterior"]],
+  ];
+  const state = { dil: 1, borr: 1, alt: 1, cons: 2, pos: 1 };
+  const form = $("#bishopForm");
+  params.forEach(([key, label, opts]) => {
+    const wrap = document.createElement("div"); wrap.className = "stack"; wrap.style.gap = "6px";
+    wrap.innerHTML = `<div class="row" style="justify-content:space-between"><span class="label">${label}</span><span class="mono" id="pts-${key}"></span></div>`;
+    const sg = document.createElement("div"); sg.className = "seg"; wrap.appendChild(sg); form.appendChild(wrap);
+    seg(sg, opts.map((o, i) => [i, `${o} · ${i}`]), state[key], (v) => { state[key] = v; upd(); });
+  });
+  function upd() {
+    let t = 0; for (const k in state) { t += state[k]; $("#pts-" + k).textContent = "+" + state[k]; }
+    const lvl = t >= 8 ? "ok" : t >= 7 ? "warn" : "crit";
+    setResult($("#bishopRes"), lvl, t, t >= 8 ? "Cuello favorable" : t >= 7 ? "Zona intermedia" : "Cuello desfavorable",
+      t >= 8 ? "Alta probabilidad de éxito de la inducción: amniotomía y/o oxitocina." : t >= 7 ? "Valorar según protocolo del centro; algunos usan ≥ 7 como favorable." : "Se recomienda maduración cervical previa (prostaglandinas o balón).");
+    drawCervix(state.borr / 3, [0, 1.5, 3.5, 6][state.dil]);
+  }
+  function drawCervix(eff, cm) {
+    const s = $("#cervixSvg"); s.innerHTML = "";
+    const cx = 150, top = 110, t = 30, L = 80 - 72 * eff, g = 6 + cm * 10, lx = cx - g / 2, rx = cx + g / 2, R = 56, hy = top - R + 8 + cm * 2;
+    el("path", { d: `M40 0 L76 0 L76 70 Q80 ${top} ${lx} ${top} L${lx} ${top + L} L${lx - t} ${top + L} Q40 ${top + 10} 40 70 Z`, fill: "var(--accent)", opacity: .85 }, s);
+    el("path", { d: `M260 0 L224 0 L224 70 Q220 ${top} ${rx} ${top} L${rx} ${top + L} L${rx + t} ${top + L} Q260 ${top + 10} 260 70 Z`, fill: "var(--accent)", opacity: .85 }, s);
+    el("circle", { cx, cy: hy, r: R, fill: "var(--skin)" }, s);
+    el("line", { x1: lx, x2: rx, y1: top + L + 12, y2: top + L + 12, stroke: "var(--teal)", "stroke-width": 4, "stroke-linecap": "round" }, s);
+    svgText(s, 10, 212, `Longitud ≈ ${(3.5 * (1 - eff)).toFixed(1).replace(".", ",")} cm · Dilatación ≈ ${String(cm).replace(".", ",")} cm`, { "font-size": 12, fill: "var(--muted)" });
+  }
+  upd();
+})();
+
+/* ---------- 03 LCG ---------- */
+(function () {
+  const thr = { 5: 6, 6: 5, 7: 3, 8: 2.5, 9: 2 };
+  const ids = ["lcgPar", "lcgStage", "lcgCm", "lcgH", "lcgFhr", "lcgDec", "lcgLa", "lcgCtx", "lcgDur", "lcgPulse", "lcgSbp", "lcgDbp", "lcgTemp"];
+  function run() {
+    const v = (id) => $("#" + id).value, n = (id) => parseFloat($("#" + id).value);
+    const stage = v("lcgStage"), par = v("lcgPar"), cm = +v("lcgCm"), h = n("lcgH");
+    $("#cmRow").style.display = stage === "1" ? "" : "none";
+    $("#lcgHLabel").textContent = stage === "1" ? "Horas en esta dilatación" : "Horas de segunda etapa";
+    const a = [];
+    if (stage === "1" && h >= thr[cm]) a.push(`Sin progreso: ${String(h).replace(".", ",")} h a ${cm} cm (umbral ≥ ${String(thr[cm]).replace(".", ",")} h)`);
+    if (stage === "2") { const lim = par === "n" ? 3 : 2; if (h >= lim) a.push(`Segunda etapa ≥ ${lim} h en ${par === "n" ? "nulípara" : "multípara"}`); }
+    const fhr = n("lcgFhr"); if (fhr < 110 || fhr >= 160) a.push(`FCF basal ${fhr} lpm (alerta si < 110 o ≥ 160)`);
+    if (v("lcgDec") === "L") a.push("Deceleraciones tardías");
+    if (v("lcgLa") === "M3") a.push("Líquido meconial espeso (M+++)");
+    if (v("lcgLa") === "B") a.push("Líquido sanguinolento");
+    const c = n("lcgCtx"); if (c <= 2 || c > 5) a.push(`${c} contracciones/10 min (alerta si ≤ 2 o > 5)`);
+    const d = n("lcgDur"); if (d < 20 || d > 60) a.push(`Duración ${d} s (alerta si < 20 o > 60 s)`);
+    const p = n("lcgPulse"); if (p < 60 || p >= 120) a.push(`Pulso ${p} lpm (alerta si < 60 o ≥ 120)`);
+    const sb = n("lcgSbp"); if (sb < 80 || sb >= 140) a.push(`PAS ${sb} mmHg (alerta si < 80 o ≥ 140)`);
+    const db = n("lcgDbp"); if (db >= 90) a.push(`PAD ${db} mmHg (alerta si ≥ 90)`);
+    const t = n("lcgTemp"); if (t < 35 || t >= 37.5) a.push(`Temperatura ${String(t).replace(".", ",")} °C (alerta si < 35 o ≥ 37,5)`);
+    setResult($("#lcgRes"), a.length ? (a.length > 1 ? "crit" : "warn") : "ok", a.length, a.length ? (a.length === 1 ? "Una alerta" : `${a.length} alertas`) : "Sin alertas",
+      a.length ? "Registra la alerta, valora la causa y documenta un plan compartido con la mujer." : "Todos los valores están dentro de los umbrales de la guía. Continúa con los cuidados de apoyo.");
+    $("#lcgAlerts").innerHTML = a.map((x) => `<div class="alert"><span class="pill crit">Alerta</span><span>${x}</span></div>`).join("");
+    drawChart(stage === "1" ? cm : null, h);
+  }
+  function drawChart(cm, h) {
+    const s = $("#lcgChart"); s.innerHTML = "";
+    const X = (i) => 60 + i * 76, Y = (hh) => 180 - (hh / 7) * 160;
+    for (let g = 0; g <= 7; g++) { el("line", { x1: 50, x2: 430, y1: Y(g), y2: Y(g), stroke: "var(--line)" }, s); svgText(s, 22, Y(g) + 4, g + " h", { "font-size": 11, fill: "var(--muted)", "font-family": "var(--font-mono)" }); }
+    [5, 6, 7, 8, 9].forEach((c, i) => {
+      const sel = c === cm;
+      el("rect", { x: X(i), y: Y(thr[c]), width: 48, height: 180 - Y(thr[c]), rx: 5, fill: sel ? "var(--accent)" : "var(--accent)", opacity: sel ? 1 : 0.28 }, s);
+      svgText(s, X(i) + 24, Y(thr[c]) - 6, String(thr[c]).replace(".", ",") + " h", { "text-anchor": "middle", "font-size": 11.5, "font-family": "var(--font-mono)", "font-weight": 600 });
+      svgText(s, X(i) + 24, 198, c + " cm", { "text-anchor": "middle", "font-size": 12, fill: "var(--muted)" });
+      if (sel) { const yy = Y(Math.min(h, 7)); el("line", { x1: X(i) - 8, x2: X(i) + 56, y1: yy, y2: yy, stroke: h >= thr[c] ? "var(--crit)" : "var(--teal)", "stroke-width": 3 }, s); }
+    });
+  }
+  ids.forEach((id) => $("#" + id).addEventListener("input", run)); run();
+})();
+
+/* ---------- 04 RCTG ---------- */
+(function () {
+  const cv = $("#ctg"), ids = ["ctgBase", "ctgVar", "ctgDec", "ctgAcc"];
+  function rnd(seed) { let x = seed; return () => ((x = (x * 9301 + 49297) % 233280) / 233280); }
+  function classify(b, va, de) {
+    const path = [], susp = [];
+    if (b < 100) path.push("Bradicardia < 100 lpm");
+    else if (b < 110) susp.push("Línea de base 100–110 lpm");
+    else if (b > 160) susp.push("Taquicardia > 160 lpm");
+    if (va === "redLong") path.push("Variabilidad reducida > 50 min");
+    if (va === "incr") path.push("Variabilidad aumentada > 30 min");
+    if (va === "sin") path.push("Patrón sinusoidal > 30 min");
+    if (va === "redShort") susp.push("Variabilidad reducida < 50 min");
+    if (de === "late") path.push("Deceleraciones tardías repetitivas > 30 min");
+    if (de === "prol") path.push("Deceleración prolongada > 5 min");
+    if (de === "varRep") { if (va === "redShort" || va === "redLong") path.push("Deceleraciones repetitivas con variabilidad reducida (> 20 min)"); else susp.push("Deceleraciones variables repetitivas"); }
+    return path.length ? ["crit", "Patológico", path, "Acción inmediata: corregir causas reversibles (postura, hipotensión, taquisistolia), métodos adicionales de valoración o finalizar el parto si no mejora."]
+      : susp.length ? ["warn", "Sospechoso", susp, "Corregir causas reversibles, vigilancia estrecha o métodos adicionales para confirmar la oxigenación fetal."]
+      : ["ok", "Normal", ["Línea de base 110–160, variabilidad 5–25 y sin deceleraciones repetitivas"], "No se requiere intervención para mejorar la oxigenación fetal."];
+  }
+  function draw() {
+    const b = +$("#ctgBase").value, va = $("#ctgVar").value, de = $("#ctgDec").value, acc = $("#ctgAcc").value === "1";
+    $("#ctgBaseOut").textContent = b;
+    const W = cv.clientWidth || 900, dpr = window.devicePixelRatio || 1, H = 360;
+    cv.width = W * dpr; cv.height = H * dpr; const c = cv.getContext("2d"); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+    const L = 44, R = W - 10, top = 10, fh = 220, tTop = 250, th = 95, mins = 20;
+    const x = (sec) => L + (sec / (mins * 60)) * (R - L), yF = (bpm) => top + (1 - (bpm - 50) / 160) * fh, yT = (mm) => tTop + (1 - mm / 100) * th;
+    c.fillStyle = css("--teal-soft"); c.fillRect(L, yF(160), R - L, yF(110) - yF(160));
+    c.lineWidth = 1; c.font = "11px " + css("--font-mono"); c.fillStyle = css("--muted");
+    for (let bpm = 60; bpm <= 210; bpm += 10) { c.strokeStyle = css("--line"); c.globalAlpha = bpm % 30 === 0 ? 1 : 0.45; c.beginPath(); c.moveTo(L, yF(bpm)); c.lineTo(R, yF(bpm)); c.stroke(); c.globalAlpha = 1; if (bpm % 30 === 0) c.fillText(bpm, 8, yF(bpm) + 4); }
+    for (let mm = 0; mm <= 100; mm += 25) { c.strokeStyle = css("--line"); c.beginPath(); c.moveTo(L, yT(mm)); c.lineTo(R, yT(mm)); c.stroke(); c.fillText(mm, 14, yT(mm) + 4); }
+    for (let m = 0; m <= mins; m++) { c.strokeStyle = css("--line"); c.globalAlpha = m % 5 === 0 ? 1 : 0.5; c.beginPath(); c.moveTo(x(m * 60), top); c.lineTo(x(m * 60), yF(50)); c.moveTo(x(m * 60), tTop); c.lineTo(x(m * 60), tTop + th); c.stroke(); c.globalAlpha = 1; if (m % 5 === 0) c.fillText(m + "′", x(m * 60) - 6, tTop - 8); }
+    c.fillText("FCF (lpm)", L + 4, top + 12); c.fillText("Toco (mmHg)", L + 4, tTop + 12);
+    const ctx = [90, 270, 450, 630, 810, 990, 1170];
+    const r = rnd(11), amp = { normal: 7, redShort: 1.6, redLong: 1.2, incr: 16, sin: 0 }[va];
+    const F = [], T = [];
+    let wander = 0;
+    for (let s = 0; s <= mins * 60; s += 2) {
+      let f = b; wander += (r() - 0.5) * amp * 0.5; wander *= 0.85; f += wander + (r() - 0.5) * amp * 0.6 + Math.sin(s / 9) * amp * 0.35;
+      if (va === "sin") f = b + 9 * Math.sin((s / 60) * 2 * Math.PI * 4);
+      if (acc && va !== "sin" && de !== "prol") [200, 700].forEach((a) => { const d = (s - a) / 16; f += 22 * Math.exp(-d * d); });
+      ctx.forEach((cp) => {
+        if (de === "early") { const d = (s - cp) / 28; f -= 18 * Math.exp(-d * d); }
+        if (de === "late") { const d = (s - cp - 35) / 28; f -= 22 * Math.exp(-d * d); }
+      });
+      if (de === "varIso") { const d = (s - 640) / 9; f -= 45 * Math.exp(-d * d); }
+      if (de === "varRep") ctx.forEach((cp, i) => { const d = (s - cp + 5 - (i % 2) * 8) / 9; f -= 42 * Math.exp(-d * d); });
+      if (de === "prol") { if (s > 560 && s < 940) { const e = Math.min(1, (s - 560) / 60, (940 - s) / 60); f = f - (b - 78) * e; } }
+      F.push([s, f]);
+      let p = 12; ctx.forEach((cp) => { const d = (s - cp) / 32; p += 48 * Math.exp(-d * d); }); T.push([s, p + (r() - 0.5) * 1.5]);
+    }
+    const ink = css("--accent"); c.strokeStyle = ink; c.lineWidth = 1.6; c.beginPath(); F.forEach(([s, f], i) => (i ? c.lineTo(x(s), yF(f)) : c.moveTo(x(s), yF(f)))); c.stroke();
+    c.strokeStyle = css("--teal"); c.beginPath(); T.forEach(([s, p], i) => (i ? c.lineTo(x(s), yT(p)) : c.moveTo(x(s), yT(p)))); c.stroke();
+    const [lvl, title, reasons, action] = classify(b, va, de);
+    setResult($("#ctgRes"), lvl, null, "RCTG " + title.toLowerCase(), `<b>${reasons.join(" · ")}</b><br>${action}`);
+  }
+  ids.forEach((id) => $("#" + id).addEventListener("input", draw));
+  window.addEventListener("resize", () => { if ($("#p-rctg").classList.contains("active")) draw(); });
+  redraws.rctg = draw;
+})();
+
+/* ---------- 05 Analgesia ---------- */
+(function () {
+  const segs = ["T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12", "L1", "L2", "L3", "L4", "L5", "S1", "S2", "S3", "S4", "S5"];
+  const modes = {
+    dil: ["Dolor de la dilatación", ["T10", "T11", "T12", "L1"], "Visceral: contracción y distensión del segmento inferior y del cuello. Fibras C aferentes con el simpático hasta T10–L1. Dolor sordo, difuso, referido a abdomen bajo, región lumbar y sacra.", "var(--accent)"],
+    exp: ["Dolor del expulsivo", ["S2", "S3", "S4"], "Somático: distensión de vagina, suelo pélvico y periné. Nervio pudendo (fibras Aδ). Dolor agudo y bien localizado, que se suma al visceral.", "var(--teal)"],
+    epi: ["Epidural de parto", ["T10", "T11", "T12", "L1", "L2", "L3", "L4", "L5", "S1", "S2", "S3", "S4", "S5"], "Bloqueo sensitivo objetivo T10–S5 con anestésico local a baja concentración ± opioide, preservando en lo posible la función motora.", "var(--warn)"],
+    pud: ["Bloqueo pudendo", ["S2", "S3", "S4"], "Infiltración transvaginal junto a la espina ciática. Útil en el expulsivo, el parto instrumental bajo y la reparación perineal; no alivia la dilatación.", "var(--ok)"],
+    ces: ["Raquídea para cesárea", segs.slice(0), "Se necesita un nivel sensitivo hasta T4 para evitar el dolor peritoneal visceral durante la cesárea.", "var(--crit)"],
+  };
+  const svg = $("#spineSvg");
+  function draw(key) {
+    const [title, on, txt, col] = modes[key]; svg.innerHTML = "";
+    segs.forEach((sg, i) => {
+      const y = 12 + i * 23.5, active = on.includes(sg);
+      el("rect", { x: 30, y, width: 74, height: 19, rx: 5, fill: active ? col : "var(--surface)", stroke: active ? col : "var(--line)" }, svg);
+      svgText(svg, 67, y + 14, sg, { "text-anchor": "middle", "font-size": 12, "font-weight": 700, fill: active ? "var(--surface)" : "var(--muted)", "font-family": "var(--font-mono)" });
+    });
+    // body silhouette with zones
+    el("circle", { cx: 300, cy: 58, r: 32, fill: "var(--line)" }, svg);
+    el("path", { d: "M262 104 Q300 92 338 104 L356 230 Q372 262 362 300 L350 340 L250 340 L238 300 Q228 262 244 230 Z", fill: "var(--line)" }, svg);
+    el("path", { d: "M258 344 L292 344 L288 450 L264 450 Z M308 344 L342 344 L336 450 L312 450 Z", fill: "var(--line)" }, svg);
+    const vis = on.some((s) => ["T10", "T11", "T12", "L1"].includes(s)), som = on.some((s) => ["S2", "S3", "S4"].includes(s)), high = on.includes("T4");
+    if (high) el("rect", { x: 250, y: 140, width: 100, height: 120, rx: 12, fill: col, opacity: .35 }, svg);
+    if (vis) el("rect", { x: 248, y: 236, width: 104, height: 62, rx: 14, fill: col, opacity: .75 }, svg);
+    if (som) el("ellipse", { cx: 300, cy: 336, rx: 30, ry: 14, fill: key === "exp" || key === "pud" ? col : col, opacity: .9 }, svg);
+    svgText(svg, 380, 252, "Abdomen bajo", { "font-size": 12, fill: "var(--muted)" }); svgText(svg, 380, 268, "y región lumbar", { "font-size": 12, fill: "var(--muted)" });
+    el("line", { x1: 352, x2: 376, y1: 262, y2: 258, stroke: "var(--muted)" }, svg);
+    svgText(svg, 380, 340, "Periné", { "font-size": 12, fill: "var(--muted)" }); el("line", { x1: 330, x2: 376, y1: 336, y2: 336, stroke: "var(--muted)" }, svg);
+    svgText(svg, 380, 160, "Nivel T4", { "font-size": 12, fill: "var(--muted)" }); svgText(svg, 380, 176, "(mamilas)", { "font-size": 12, fill: "var(--muted)" });
+    el("line", { x1: 350, x2: 376, y1: 150, y2: 156, stroke: "var(--muted)" }, svg);
+    $("#painRes").className = "result info";
+    $("#painRes").innerHTML = `<div class="stack" style="gap:4px"><h3>${title} · ${on.length === segs.length ? "T4–S5" : on[0] + "–" + on[on.length - 1]}</h3><p>${txt}</p></div>`;
+  }
+  const chips = $("#painChips");
+  Object.entries(modes).forEach(([k, m], i) => { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = m[0]; b.setAttribute("aria-pressed", String(i === 0)); b.onclick = () => { [...chips.children].forEach((c) => c.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); draw(k); }; chips.appendChild(b); });
+  draw("dil");
+})();
+
+/* ---------- 06 HPP ---------- */
+(function () {
+  const T = { tono: ["Tono", 70, "Atonía uterina. Masaje bimanual, vaciar vejiga, uterotónicos: oxitocina, metilergometrina (no si HTA), carboprost (no si asma), misoprostol. Ácido tranexámico 1 g IV en las primeras 3 h.", "var(--accent)"], trauma: ["Trauma", 20, "Desgarros de cérvix, vagina o periné, hematomas, rotura o inversión uterina. Revisión del canal con buena luz y analgesia.", "var(--teal)"], tejido: ["Tejido", 10, "Restos placentarios o acretismo. Revisar integridad de placenta y membranas; extracción manual o legrado.", "var(--warn)"], trombina: ["Trombina", 1, "Coagulopatía previa o adquirida (CID, preeclampsia grave, DPPNI, embolia de líquido amniótico). Analítica con fibrinógeno.", "var(--crit)"] };
+  const svg = $("#tSvg"), chips = $("#tChips");
+  function draw(key) {
+    svg.innerHTML = ""; let xx = 10; const tot = 101;
+    Object.entries(T).forEach(([k, [n, p, , col]]) => { const w = Math.max(14, (p / tot) * 420); el("rect", { x: xx, y: 8, width: w - 3, height: 26, rx: 5, fill: col, opacity: k === key ? 1 : 0.3 }, svg); if (w > 40) svgText(svg, xx + 8, 26, `${n} ${p === 1 ? "< 1" : "≈ " + p} %`, { "font-size": 12, "font-weight": 700, fill: k === key ? "var(--surface)" : "var(--ink)" }); xx += w; });
+    svgText(svg, 10, 54, "Frecuencia aproximada como causa de HPP", { "font-size": 11, fill: "var(--muted)" });
+    const [n, , txt] = T[key]; $("#tRes").innerHTML = `<div class="stack" style="gap:4px"><h3>${n}</h3><p>${txt}</p></div>`;
+  }
+  Object.entries(T).forEach(([k, v], i) => { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = v[0]; b.setAttribute("aria-pressed", String(i === 0)); b.onclick = () => { [...chips.children].forEach((c) => c.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); draw(k); }; chips.appendChild(b); });
+  draw("tono");
+  function si() {
+    const hr = +$("#siHr").value, sbp = +$("#siSbp").value, v = hr / sbp; $("#siHrOut").textContent = hr; $("#siSbpOut").textContent = sbp;
+    const lvl = v >= 1.4 ? "crit" : v >= 0.9 ? "warn" : "ok";
+    setResult($("#siRes"), lvl, v.toFixed(2).replace(".", ","), v >= 1.4 ? "Shock grave probable" : v >= 0.9 ? "Alerta: hemorragia significativa posible" : "Dentro de la normalidad obstétrica (0,7–0,9)",
+      v >= 1.4 ? "Activar código de hemorragia obstétrica, dos vías gruesas, reposición y hemoderivados." : v >= 0.9 ? "Revalorar pérdidas, buscar la causa (4 T) y avisar al equipo; valorar necesidad de transfusión." : "Mantener vigilancia de pérdidas, tono uterino y constantes.");
+    const s = $("#siSvg"); s.innerHTML = ""; const X = (q) => 10 + ((Math.min(Math.max(q, 0.4), 2) - 0.4) / 1.6) * 420;
+    [[0.4, 0.9, "var(--ok)"], [0.9, 1.4, "var(--warn)"], [1.4, 2, "var(--crit)"]].forEach(([a, b2, col]) => el("rect", { x: X(a), y: 22, width: X(b2) - X(a), height: 14, fill: col, opacity: .75 }, s));
+    [0.4, 0.9, 1.4, 2].forEach((q) => svgText(s, X(q), 56, String(q).replace(".", ","), { "text-anchor": "middle", "font-size": 11, "font-family": "var(--font-mono)", fill: "var(--muted)" }));
+    el("polygon", { points: `${X(v) - 7},6 ${X(v) + 7},6 ${X(v)},18`, fill: "var(--ink)" }, s);
+  }
+  ["siHr", "siSbp"].forEach((id) => $("#" + id).addEventListener("input", si)); si();
+})();
+
+/* ---------- 07 Periné ---------- */
+(function () {
+  const layers = [["piel", "Piel perineal y mucosa vaginal", "var(--skin)"], ["musc", "Músculos del periné (bulbocavernoso, transverso superficial)", "var(--accent)"], ["eae", "Esfínter anal externo (EAE)", "var(--warn)"], ["eai", "Esfínter anal interno (EAI)", "var(--teal)"], ["muc", "Mucosa anorrectal", "var(--crit)"]];
+  const grades = {
+    "1": [["piel"], "Grado 1", "Lesión de piel y/o mucosa vaginal. Sutura si sangra o los bordes no afrontan.", "ok"],
+    "2": [["piel", "musc"], "Grado 2", "Afecta a músculos del periné sin llegar al esfínter. Reparación por la matrona con sutura continua.", "ok"],
+    "3a": [["piel", "musc", "eae"], "Grado 3a", "Menos del 50 % del grosor del EAE. Reparación en quirófano por profesional experto.", "warn"],
+    "3b": [["piel", "musc", "eae"], "Grado 3b", "Más del 50 % del grosor del EAE. Reparación en quirófano, antibiótico y laxantes.", "warn"],
+    "3c": [["piel", "musc", "eae", "eai"], "Grado 3c", "EAE y EAI desgarrados. Reparación por separado del esfínter interno.", "crit"],
+    "4": [["piel", "musc", "eae", "eai", "muc"], "Grado 4", "Afecta al complejo esfinteriano y a la mucosa anorrectal. Seguimiento en consulta específica de suelo pélvico.", "crit"],
+  };
+  const svg = $("#tearSvg");
+  function draw(g) {
+    const [on, title, txt, lvl] = grades[g]; svg.innerHTML = "";
+    layers.forEach(([k, lab, col], i) => {
+      const y = 16 + i * 60, active = on.includes(k);
+      let w = 250; if (k === "eae") w = g === "3a" ? 250 * 0.35 : 250 * 0.75; const full = active && k !== "eae" ? 250 : active ? w : 0;
+      el("rect", { x: 20, y, width: 250, height: 46, rx: 8, fill: col, opacity: .22 }, svg);
+      if (full) el("rect", { x: 20, y, width: full, height: 46, rx: 8, fill: col, opacity: .95 }, svg);
+      if (k === "eae") { el("line", { x1: 20 + 125, x2: 20 + 125, y1: y - 4, y2: y + 50, stroke: "var(--ink)", "stroke-dasharray": "3 3" }, svg); svgText(svg, 20 + 129, y + 60, "50 %", { "font-size": 10.5, fill: "var(--muted)", "font-family": "var(--font-mono)" }); }
+      svgText(svg, 286, y + 20, lab.split(" (")[0], { "font-size": 13, "font-weight": 700, fill: active ? "var(--ink)" : "var(--muted)" });
+      if (lab.includes("(")) svgText(svg, 286, y + 37, "(" + lab.split(" (")[1], { "font-size": 11, fill: "var(--muted)" });
+    });
+    setResult($("#tearRes"), lvl, null, title, txt);
+  }
+  seg($("#tearSeg"), ["1", "2", "3a", "3b", "3c", "4"].map((k) => [k, "Grado " + k]), "2", draw); draw("2");
+})();
+
+/* ---------- 08 Apgar ---------- */
+(function () {
+  const items = [["FC", ["Ausente", "< 100 lpm", "≥ 100 lpm"]], ["Respiración", ["Ausente", "Lenta, irregular", "Llanto vigoroso"]], ["Tono", ["Flácido", "Cierta flexión", "Movimientos activos"]], ["Reflejos", ["Sin respuesta", "Mueca", "Llanto / tos"]], ["Color", ["Pálido o cianótico", "Acrocianosis", "Rosado"]]];
+  const sc = { 1: [2, 1, 1, 1, 1], 5: [2, 2, 2, 2, 1] }; let t = 1;
+  const form = $("#apgarForm");
+  function build() {
+    form.innerHTML = "";
+    items.forEach(([n, opts], i) => {
+      const w = document.createElement("div"); w.className = "stack"; w.style.gap = "6px";
+      w.innerHTML = `<span class="label">${n}</span>`; const sg = document.createElement("div"); sg.className = "seg"; w.appendChild(sg); form.appendChild(w);
+      seg(sg, opts.map((o, k) => [k, `${o} · ${k}`]), sc[t][i], (v) => { sc[t][i] = v; upd(); });
+    });
+    upd();
+  }
+  function upd() {
+    const tot = sc[t].reduce((a, b) => a + b, 0);
+    setResult($("#apgarRes"), tot >= 7 ? "ok" : tot >= 4 ? "warn" : "crit", tot, `Apgar ${tot} al ${t === 1 ? "minuto" : "quinto minuto"}`, tot >= 7 ? "Adaptación normal. Piel con piel y observación." : tot >= 4 ? "Depresión moderada: secar, estimular, posicionar vía aérea y valorar ventilación." : "Depresión grave: iniciar reanimación neonatal (no esperar al Apgar para empezar).");
+    const s = $("#apgarSvg"); s.innerHTML = "";
+    [1, 5].forEach((m, i) => { const v = sc[m].reduce((a, b) => a + b, 0), x = 90 + i * 220; el("rect", { x: x - 40, y: 120 - v * 10, width: 80, height: v * 10, rx: 6, fill: v >= 7 ? "var(--ok)" : v >= 4 ? "var(--warn)" : "var(--crit)", opacity: m === t ? 1 : 0.45 }, s); svgText(s, x, 112 - v * 10, v, { "text-anchor": "middle", "font-family": "var(--font-mono)", "font-weight": 700, "font-size": 16 }); svgText(s, x, 142, m === 1 ? "1 minuto" : "5 minutos", { "text-anchor": "middle", "font-size": 12, fill: "var(--muted)" }); });
+    el("line", { x1: 20, x2: 420, y1: 120 - 70, y2: 120 - 70, stroke: "var(--ok)", "stroke-dasharray": "4 4" }, s); svgText(s, 372, 120 - 74, "7", { "font-size": 11, fill: "var(--ok)", "font-family": "var(--font-mono)" });
+  }
+  seg($("#apgarTime"), [[1, "1 minuto"], [5, "5 minutos"]], 1, (v) => { t = v; build(); }); build();
+})();
+
+/* ---------- 09 Puerperio ---------- */
+(function () {
+  const day = $("#pDay");
+  function fundus(d) { if (d === 0) return -1; if (d === 1) return 0; return Math.max(-14, -(d - 1)); }
+  function draw() {
+    const d = +day.value; $("#pDayOut").textContent = d;
+    const f = fundus(d), s = $("#uterusSvg"); s.innerHTML = "";
+    const umb = 90, pub = 250, cmPx = (pub - umb) / 14;
+    el("path", { d: "M120 10 Q100 150 130 290 L390 290 Q420 150 400 10 Z", fill: "var(--surface)", stroke: "var(--line)", "stroke-width": 2 }, s);
+    el("circle", { cx: 260, cy: umb, r: 6, fill: "var(--muted)" }, s); svgText(s, 410, umb + 4, "Ombligo", { "font-size": 12, fill: "var(--muted)" });
+    el("line", { x1: 180, x2: 340, y1: pub, y2: pub, stroke: "var(--bone-line)", "stroke-width": 6, "stroke-linecap": "round" }, s); svgText(s, 410, pub + 4, "Sínfisis", { "font-size": 12, fill: "var(--muted)" });
+    const fy = Math.min(pub - 4, umb - f * cmPx);
+    const palp = fy < pub - 8;
+    if (palp) el("path", { d: `M190 ${pub} Q190 ${fy} 260 ${fy} Q330 ${fy} 330 ${pub} Z`, fill: "var(--accent)", opacity: .8 }, s);
+    else svgText(s, 190, pub - 12, "Útero no palpable por abdomen", { "font-size": 12, fill: "var(--accent)", "font-weight": 700 });
+    for (let k = -2; k <= 14; k += 2) { const y = umb + k * cmPx; el("line", { x1: 88, x2: 100, y1: y, y2: y, stroke: "var(--muted)" }, s); svgText(s, 40, y + 4, k === 0 ? "0" : (k > 0 ? "−" : "+") + Math.abs(k), { "font-size": 11, "font-family": "var(--font-mono)", fill: "var(--muted)" }); }
+    $("#fundusOut").textContent = !palp ? "No palpable" : f === 0 ? "En el ombligo" : (f > 0 ? "+" : "−") + Math.abs(f) + " cm";
+    const lo = d <= 4 ? ["Rubra", "#B23A48"] : d <= 10 ? ["Serosa", "#D98A96"] : ["Alba", "#E4CDB4"];
+    $("#lochiaOut").textContent = lo[0];
+    const ls = $("#lochiaSvg"); ls.innerHTML = ""; const X = (dd) => 10 + (dd / 42) * 500;
+    [[0, 4, "#B23A48", "Rubra"], [4, 10, "#D98A96", "Serosa"], [10, 42, "#E4CDB4", "Alba"]].forEach(([a, b, col, n]) => { el("rect", { x: X(a), y: 8, width: X(b) - X(a) - 2, height: 26, rx: 4, fill: col }, ls); svgText(ls, X(a) + 6, 26, n, { "font-size": 12, "font-weight": 700, fill: n === "Alba" ? "#5E2340" : "#FFFFFF" }); });
+    el("rect", { x: X(d) - 1.5, y: 2, width: 3, height: 38, fill: "var(--ink)" }, ls);
+    [0, 7, 14, 21, 28, 35, 42].forEach((dd) => svgText(ls, X(dd), 58, dd === 0 ? "Parto" : "d" + dd, { "text-anchor": dd === 0 ? "start" : dd === 42 ? "end" : "middle", "font-size": 11, "font-family": "var(--font-mono)", fill: "var(--muted)" }));
+    const ms = [[0, 2, "Primeras 2 h: globo de seguridad, sangrado, constantes y micción."], [2, 4, "Subida de la leche (lactogénesis II) entre los días 2 y 4."], [3, 14, "Tristeza posparto: aparece hacia el día 3–5 y se resuelve en ≤ 2 semanas."], [3, 5, "Prueba del talón del recién nacido a partir de las 48 h."], [7, 14, "Útero intrapélvico; retirada de puntos si no reabsorbibles."], [35, 42, "Revisión posparto: suelo pélvico, anticoncepción, salud mental."]];
+    $("#milestones").innerHTML = `<h3>Qué vigilar en el día ${d}</h3><div class="alerts">` + ms.map(([a, b, t]) => `<div class="alert ${d >= a && d <= b ? "okay" : ""}" style="${d >= a && d <= b ? "" : "background:var(--sunk);color:var(--muted)"}"><span class="pill ${d >= a && d <= b ? "ok" : "info"}">d${a}–${b}</span><span>${t}</span></div>`).join("") + "</div>";
+  }
+  day.addEventListener("input", draw); draw();
+})();
+
+/* ---------- 10 Repaso ---------- */
+(function () {
+  const Q = [
+    ["¿A qué estación corresponde el III plano de Hodge?", ["−3", "0", "+3", "−1"], 1, "El III plano pasa por las espinas ciáticas, que definen la estación 0."],
+    ["Diámetro de presentación en la flexión completa:", ["Occipitofrontal", "Suboccipitobregmático", "Occipitomentoniano", "Biparietal"], 1, "El suboccipitobregmático (≈ 9,5 cm) es el menor diámetro AP de la cabeza."],
+    ["Bishop: dilatación 2 cm, borramiento 50 %, estación −2, consistencia media, posición posterior. Total:", ["3", "4", "5", "6"], 1, "1 + 1 + 1 + 1 + 0 = 4: cuello desfavorable."],
+    ["Según la OMS (2018), la fase activa comienza a los:", ["3 cm", "4 cm", "5 cm", "6 cm"], 2, "Las recomendaciones de 2018 sitúan el inicio de la fase activa en 5 cm."],
+    ["En la Guía de Cuidados (OMS 2020), el umbral de alerta a 7 cm es:", ["≥ 2 h", "≥ 3 h", "≥ 5 h", "≥ 6 h"], 1, "5 cm ≥ 6 h · 6 cm ≥ 5 h · 7 cm ≥ 3 h · 8 cm ≥ 2,5 h · 9 cm ≥ 2 h."],
+    ["Según FIGO 2015, un RCTG con variabilidad < 5 lpm durante más de 50 min es:", ["Normal", "Sospechoso", "Patológico", "No valorable"], 2, "La variabilidad reducida más de 50 minutos es un criterio patológico."],
+    ["Las deceleraciones tardías se relacionan con:", ["Compresión cefálica", "Compresión funicular", "Respuesta quimiorrefleja a hipoxemia", "Movimientos fetales"], 2, "Su inicio tras el acmé refleja la respuesta a la hipoxemia por insuficiencia uteroplacentaria."],
+    ["El dolor de la dilatación se transmite por los segmentos:", ["T4–T6", "T10–L1", "L4–S1", "S2–S4"], 1, "Visceral, por aferencias simpáticas que entran en T10–L1."],
+    ["Nivel sensitivo necesario para una cesárea con raquídea:", ["T10", "T8", "T4", "L1"], 2, "T4 evita el dolor de la manipulación peritoneal."],
+    ["Causa más frecuente de hemorragia posparto:", ["Trauma", "Tejido", "Tono", "Trombina"], 2, "La atonía uterina supone alrededor del 70 % de los casos."],
+    ["Índice de shock a partir del cual hay que alertar en obstetricia:", ["≥ 0,5", "≥ 0,7", "≥ 0,9", "≥ 2"], 2, "Un índice ≥ 0,9 sugiere hemorragia significativa; ≥ 1,4 indica gravedad."],
+    ["Desgarro con más del 50 % del esfínter anal externo afectado:", ["Grado 2", "Grado 3a", "Grado 3b", "Grado 3c"], 2, "3a < 50 % EAE · 3b > 50 % EAE · 3c afecta también al EAI."],
+    ["Dosis de oxitocina en el manejo activo del alumbramiento:", ["5 UI", "10 UI", "20 UI", "40 UI"], 1, "10 UI IM o IV lenta es la recomendación de la OMS."],
+    ["Apgar: FC 90, respiración irregular, cierta flexión, mueca, acrocianosis. Total:", ["4", "5", "6", "7"], 1, "1 + 1 + 1 + 1 + 1 = 5."],
+    ["Los loquios serosos suelen durar aproximadamente:", ["Hasta el día 4", "Del día 4 al 10", "Del día 10 al 42", "Solo las primeras 24 h"], 1, "Rubra días 1–4, serosa hasta el día 10 y alba hasta las 4–6 semanas."],
+    ["Pinzamiento del cordón recomendado en un recién nacido que no necesita reanimación:", ["Inmediato", "A los 30 s", "No antes de 1 min", "Tras la placenta"], 2, "La OMS recomienda no pinzar antes de 1 minuto."],
+  ];
+  let order = [], idx = 0, score = 0, answered = false;
+  const box = $("#quizBox");
+  function start() { order = Q.map((_, i) => i).sort(() => Math.random() - 0.5).slice(0, 10); idx = 0; score = 0; render(); }
+  function render() {
+    if (idx >= order.length) {
+      const lvl = score >= 8 ? "ok" : score >= 5 ? "warn" : "crit";
+      box.innerHTML = `<div class="result ${lvl}"><div class="big">${score}/10</div><div class="stack" style="gap:4px"><h3>${score >= 8 ? "Muy bien" : score >= 5 ? "Bien, con margen de repaso" : "Conviene repasar los temas"}</h3><p>Pulsa «Nueva ronda» para otra serie al azar.</p></div></div>`;
+      return;
+    }
+    const [q, opts, ok, why] = Q[order[idx]]; answered = false;
+    box.innerHTML = `<div class="row" style="justify-content:space-between"><span class="label">Pregunta ${idx + 1} de 10</span><span class="pill info">${score} aciertos</span></div><div class="progress"><i style="width:${(idx / 10) * 100}%"></i></div><h3 style="font-size:18px">${q}</h3><div class="stack" id="opts"></div><div id="why"></div>`;
+    const o = $("#opts", box);
+    opts.forEach((t, i) => { const b = document.createElement("button"); b.className = "quiz-opt"; b.type = "button"; b.textContent = t; b.onclick = () => {
+      if (answered) return; answered = true; if (i === ok) score++;
+      [...o.children].forEach((c, j) => { c.disabled = true; if (j === ok) c.classList.add("right"); else if (j === i) c.classList.add("wrong"); });
+      $("#why", box).innerHTML = `<div class="result ${i === ok ? "ok" : "crit"}"><div class="stack" style="gap:6px"><h3>${i === ok ? "Correcto" : "Incorrecto"}</h3><p>${why}</p><div><button class="btn" type="button" id="next">${idx === 9 ? "Ver resultado" : "Siguiente"}</button></div></div></div>`;
+      $("#next", box).onclick = () => { idx++; render(); }; $("#next", box).focus();
+    }; o.appendChild(b); });
+  }
+  $("#quizRestart").onclick = start; start();
+  const cards = [["FCF basal normal", "110–160 lpm"], ["Variabilidad normal", "5–25 lpm"], ["Fase activa (OMS)", "Desde 5 cm"], ["Expulsivo máx. orientativo", "3 h nulípara · 2 h multípara"], ["Placenta retenida", "> 30 min con manejo activo"], ["HPP vaginal", "≥ 500 ml"], ["HPP cesárea", "≥ 1.000 ml"], ["Bishop favorable", "≥ 8"], ["Taquisistolia", "> 5 contracciones / 10 min"], ["Unidades Montevideo eficaces", "≥ 200 UM"], ["Vitamina K neonatal", "1 mg IM"], ["Masaje perineal", "Desde la semana 34–35"]];
+  const fl = $("#flash");
+  cards.forEach(([q, a]) => { const b = document.createElement("button"); b.type = "button"; b.className = "flip"; b.setAttribute("aria-expanded", "false"); b.innerHTML = `<span class="q">${q}</span><span class="a mono">${a}</span><span class="hint">Pulsa para ver</span>`; b.onclick = () => b.setAttribute("aria-expanded", String(b.getAttribute("aria-expanded") !== "true")); fl.appendChild(b); });
+})();
+</script>
+</body>
+</html>

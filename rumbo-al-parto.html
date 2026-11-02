@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rumbo al parto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Mundo único: marco nocturno ciruela-tinta que enmarca un escenario ilustrado y luminoso */
+  --ink:#1E1A31; --panel:#2A2544; --panel2:#352F55; --line:#4A4370;
+  --text:#F4F1FA; --muted:#B9B2D3;
+  --coral:#FF8A7A; --mint:#7FD6B5; --gold:#FFC857; --sky:#8EC5FF;
+  --bad:#FF6B6B; --good:#5FD3A0;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito","Segoe UI",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--text);font-family:var(--body);font-size:16px;line-height:1.45}
+.app{max-width:1040px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:12px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.brand h1{font-family:var(--display);font-weight:800;font-size:30px;line-height:1;margin:0;letter-spacing:.2px}
+.brand h1 span{color:var(--coral)}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.meter{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 12px 6px 8px}
+.meter .ico{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:14px}
+.meter .lbl{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.bar{width:92px;height:9px;background:#191529;border-radius:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:70%;border-radius:9px;transition:width .9s cubic-bezier(.3,1.4,.5,1),background .4s}
+.meter.flash{animation:flash .6s}
+@keyframes flash{30%{transform:scale(1.08)}}
+.score{font-family:var(--display);font-weight:700;font-size:18px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 14px;font-variant-numeric:tabular-nums}
+.score b{color:var(--gold)}
+.phases{display:grid;grid-template-columns:5fr 6fr 3fr;gap:6px}
+.ph{background:var(--panel);border-radius:10px;padding:6px 10px 8px;border:1px solid var(--line);position:relative;overflow:hidden}
+.ph .nm{font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);position:relative;z-index:1}
+.ph.on .nm{color:var(--text)}
+.ph .dots{display:flex;gap:4px;margin-top:5px;position:relative;z-index:1}
+.ph .dots i{flex:1;height:5px;border-radius:5px;background:#191529}
+.ph .dots i.done{background:var(--mint)}
+.ph .dots i.miss{background:var(--gold)}
+.ph .dots i.cur{background:var(--coral);animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.4}}
+.stagewrap{width:min(100%, calc(60vh * 16 / 9));min-width:min(100%,560px);margin:0 auto;position:relative;border-radius:20px;overflow:hidden;border:2px solid var(--line);background:#000;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+#stage{display:block;width:100%;height:auto;aspect-ratio:16/9}
+.scenetag{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;z-index:2;pointer-events:none}
+.scenetag span{background:rgba(30,26,49,.82);backdrop-filter:blur(4px);color:var(--text);font-weight:800;font-size:13px;padding:5px 11px;border-radius:999px}
+.scenetag span:first-child{background:var(--coral);color:#2A1420}
+.dialog{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px;min-height:190px}
+.say{display:flex;gap:12px;align-items:flex-start}
+.who{flex:none;font-weight:800;font-size:12px;letter-spacing:.6px;text-transform:uppercase;padding:5px 10px;border-radius:8px;background:var(--panel2);color:var(--gold)}
+.say p{margin:0;font-size:17px;max-width:70ch}
+.say p strong{color:var(--gold)}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.choice{appearance:none;border:2px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-weight:700;font-size:15px;text-align:left;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start;cursor:pointer;transition:transform .15s,border-color .15s,background .15s}
+.choice:hover:not(:disabled){transform:translateY(-2px);border-color:var(--coral)}
+.choice:focus-visible,.btn:focus-visible,.vf:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.choice .k{flex:none;width:26px;height:26px;border-radius:8px;background:var(--ink);display:grid;place-items:center;font-family:var(--display);color:var(--coral)}
+.choice:disabled{cursor:default;opacity:.45}
+.choice.picked{opacity:1;border-color:var(--gold)}
+.choice.picked.ok{border-color:var(--good);background:#21443A}
+.choice.picked.ko{border-color:var(--bad);background:#4A2333}
+.choice.tried{opacity:.35;text-decoration:line-through}
+.fb{border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;animation:rise .45s ease-out}
+.fb.ok{background:#1F3F37;border:1px solid #3E8C72}
+.fb.ko{background:#43222F;border:1px solid #8E4258}
+.fb h3{margin:0;font-family:var(--display);font-size:22px;line-height:1.1}
+.fb.ok h3{color:var(--good)} .fb.ko h3{color:#FF9A9A}
+.fb p{margin:0;max-width:75ch}
+.fb .src{font-size:13px;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{appearance:none;border:0;border-radius:12px;padding:11px 18px;font:inherit;font-weight:800;cursor:pointer;background:var(--coral);color:#2A1420}
+.btn.ghost{background:transparent;color:var(--text);border:2px solid var(--line)}
+.btn:hover{filter:brightness(1.08)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.drops{display:flex;gap:14px;flex-wrap:wrap}
+.drops div{display:flex;gap:8px;align-items:center;font-size:14px}
+.drops i{width:16px;height:22px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;display:inline-block;border:1px solid rgba(255,255,255,.4)}
+.end{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.end h2{font-family:var(--display);margin:0 0 6px;font-size:26px}
+.end ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.vfgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.vf{appearance:none;border:2px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-size:14px;text-align:left;border-radius:12px;padding:10px;cursor:pointer;min-height:96px}
+.vf b{display:block;font-family:var(--display);font-size:18px}
+.vf.V b{color:var(--good)} .vf.F b{color:#FF9A9A}
+.note{font-size:12px;color:var(--muted)}
+/* SVG */
+svg text{font-family:var(--body)}
+.breathe{animation:breathe 3.6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes breathe{50%{transform:scale(1.025)}}
+.sway{animation:sway 2.8s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.bob{animation:bob .5s ease-in-out infinite alternate}
+@keyframes bob{to{transform:translateY(-3px)}}
+.spin{animation:spin .5s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.road{animation:road .45s linear infinite}
+@keyframes road{to{transform:translateX(-90px)}}
+.skyline{animation:road2 9s linear infinite}
+@keyframes road2{to{transform:translateX(-400px)}}
+.pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1) both;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes pop{from{transform:scale(.3);opacity:0}}
+.fade{animation:fade .6s ease-out both}
+@keyframes fade{from{opacity:0}}
+.floatUp{animation:floatUp 2.6s ease-out infinite;opacity:0}
+@keyframes floatUp{0%{opacity:0;transform:translateY(0) scale(.6)}15%{opacity:1}100%{opacity:0;transform:translateY(-110px) scale(1.1)}}
+.fall{animation:fall 1s linear infinite;opacity:0}
+@keyframes fall{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:0;transform:translateY(150px)}}
+.scroll{animation:scroll 6s linear infinite}
+@keyframes scroll{to{transform:translateX(-200px)}}
+.glow{animation:glow 2.4s ease-in-out infinite}
+@keyframes glow{0%,100%{opacity:0}50%{opacity:.75}}
+.shiver{animation:shiver .12s linear infinite alternate}
+@keyframes shiver{to{transform:translateX(2.5px)}}
+.twinkle{animation:blink 2s infinite}
+.orbit{animation:spin 1.6s linear infinite;transform-box:view-box}
+.draw{stroke-dasharray:1200;stroke-dashoffset:1200;animation:draw 4s linear forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.beat{animation:beat .8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes beat{30%{transform:scale(1.25)}}
+.rub{animation:rub .35s ease-in-out infinite alternate}
+@keyframes rub{to{transform:translate(14px,-4px)}}
+@media (max-width:720px){
+  .choices{grid-template-columns:1fr}
+  .end{grid-template-columns:1fr}
+  .vfgrid{grid-template-columns:1fr 1fr}
+  .brand h1{font-size:24px}
+  .say p{font-size:16px}
+  .scenetag span{font-size:11px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><h1>Rumbo al <span>parto</span></h1><p>Acompaña a Ana desde la semana 36 hasta el posparto y decide en cada momento</p></div>
+    <div class="hud">
+      <div class="meter" id="mM"><div class="ico" style="background:#FF8A7A33">🤰</div><div><div class="lbl">Ana</div><div class="bar"><i id="barM"></i></div></div></div>
+      <div class="meter" id="mB"><div class="ico" style="background:#7FD6B533">👶</div><div><div class="lbl">Bebé</div><div class="bar"><i id="barB"></i></div></div></div>
+      <div class="score">Aciertos <b id="score">0</b>/<span id="total">14</span></div>
+    </div>
+  </header>
+  <nav class="phases" id="phases" aria-label="Fases"></nav>
+  <div class="stagewrap">
+    <div class="scenetag"><span id="tagTime">Inicio</span><span id="tagTitle">La aventura de Ana</span></div>
+    <svg id="stage" viewBox="0 0 800 450" role="img" aria-label="Escena animada del juego">
+      <defs>
+        <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#1E1A31" flood-opacity=".25"/></filter>
+        <linearGradient id="gNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1D1B3A"/><stop offset="1" stop-color="#3E3767"/></linearGradient>
+        <linearGradient id="gEve" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F79D7B"/><stop offset="1" stop-color="#FFD79A"/></linearGradient>
+        <linearGradient id="gDay" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FD0F2"/><stop offset="1" stop-color="#D6F0FA"/></linearGradient>
+        <linearGradient id="gDawn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7F7BC8"/><stop offset="1" stop-color="#FFC6A5"/></linearGradient>
+        <radialGradient id="gLamp"><stop offset="0" stop-color="#FFE3A3" stop-opacity=".75"/><stop offset="1" stop-color="#FFE3A3" stop-opacity="0"/></radialGradient>
+        <radialGradient id="gBelly"><stop offset="0" stop-color="#FF5E6C" stop-opacity=".9"/><stop offset="1" stop-color="#FF5E6C" stop-opacity="0"/></radialGradient>
+        <clipPath id="clipPlot"><rect x="0" y="0" width="200" height="60"/></clipPath>
+      </defs>
+      <g id="L-bg"></g><g id="L-actors"></g><g id="L-widget"></g><g id="L-fx"></g>
+    </svg>
+  </div>
+  <section class="dialog" id="dialog" aria-live="polite"></section>
+  <p class="note">Basado en la presentación «Preparación al parto» (OMS 2018 y 2020, Ministerio de Sanidad, FIGO, Cochrane, SEGO). Material divulgativo: no sustituye la valoración de tu matrona, obstetra o anestesista.</p>
+</div>
+
+<script>
+/* ---------- utilidades ---------- */
+const $ = id => document.getElementById(id);
+const C = {skin:'#EDB48E',skinD:'#C98763',skin2:'#B97E5B',hair:'#3F2530',hair2:'#2A1E1B',dress:'#E85D75',leg:'#3B2A44',
+  scrub:'#6CB9AE',scrubD:'#4F978D',shirt:'#5C7CFA',plum:'#2E2340',white:'#FFFFFF',blanket:'#FFC857',baby:'#FBE3A6'};
+const raf = f => requestAnimationFrame(f);
+function tween(dur, fn, done){const t0=performance.now();const step=t=>{let p=Math.min(1,(t-t0)/dur);const e=p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;fn(e);if(p<1)raf(step);else done&&done();};raf(step);}
+const wait = ms => new Promise(r=>setTimeout(r,ms));
+function wrap(text,max){const w=text.split(' ');const out=[];let cur='';for(const x of w){if((cur+' '+x).trim().length>max){out.push(cur.trim());cur=x;}else cur+=' '+x;}if(cur.trim())out.push(cur.trim());return out;}
+
+/* ---------- personajes ---------- */
+function anaUpper(o={}){
+  const belly=o.belly!==false, mood=o.mood||'calm', arm=o.arm||'belly', dress=o.dress||C.dress;
+  const body = belly ? 'M -20 -100 Q -31 -55 -30 0 L 30 0 Q 57 -16 55 -45 Q 51 -79 18 -93 Q 6 -104 -20 -100 Z'
+                     : 'M -20 -100 Q -29 -55 -27 0 L 25 0 Q 24 -55 15 -95 Q 2 -104 -20 -100 Z';
+  const eyes = {calm:'<circle cx="11" cy="-130" r="2.3" fill="#2E2340"/>',
+    pain:'<path d="M 7 -131 L 14 -129 L 7 -126" fill="none" stroke="#2E2340" stroke-width="2" stroke-linecap="round"/>',
+    tired:'<path d="M 7 -129 Q 11 -126 15 -129" fill="none" stroke="#2E2340" stroke-width="2" stroke-linecap="round"/>',
+    happy:'<path d="M 7 -129 Q 11 -134 15 -129" fill="none" stroke="#2E2340" stroke-width="2.2" stroke-linecap="round"/>',
+    sad:'<circle cx="11" cy="-130" r="2.3" fill="#2E2340"/><path d="M 6 -137 L 14 -135" stroke="#2E2340" stroke-width="1.6" stroke-linecap="round"/>'}[mood];
+  const mouth = {calm:'M 10 -119 Q 14 -116 18 -119',pain:'M 9 -116 Q 14 -121 19 -116',tired:'M 10 -118 L 18 -118',happy:'M 9 -120 Q 14 -113 19 -120',sad:'M 10 -116 Q 14 -120 18 -116'}[mood];
+  const arms = {belly:'M -8 -94 Q -18 -58 26 -46', hold:'M -8 -94 Q -14 -52 34 -62', down:'M -8 -94 Q -16 -55 -12 -28',
+    phone:'M -8 -94 Q -14 -64 22 -96', back:'M -8 -94 Q -36 -60 -22 -30'};
+  const a = arms[arm]; const end=a.split(' ').slice(-2).map(Number);
+  let extra='';
+  if(mood==='pain') extra+='<path d="M 26 -142 q 3 6 0 9 q -3 -3 0 -9 Z" fill="#8EC5FF"/>';
+  if(mood==='sad') extra+='<path d="M 14 -125 q 2 5 0 8 q -2 -3 0 -8 Z" fill="#8EC5FF"/>';
+  if(arm==='phone') extra+=`<rect x="${end[0]-2}" y="${end[1]-14}" width="10" height="17" rx="2" fill="#2E2340"/>`;
+  return `<g>
+    <path class="${belly?'breathe':''}" d="${body}" fill="${dress}"/>
+    ${belly?`<ellipse cx="34" cy="-46" rx="22" ry="26" fill="url(#gBelly)" class="bellyglow" opacity="0"/>`:''}
+    <rect x="-5" y="-113" width="10" height="15" fill="${C.skinD}"/>
+    <circle cx="2" cy="-128" r="19" fill="${C.skin}"/>
+    <path d="M -17 -120 Q -23 -151 3 -149 Q 23 -148 21 -132 Q 12 -141 0 -139 Q -6 -130 -7 -116 Q -15 -114 -17 -120 Z" fill="${C.hair}"/>
+    <circle cx="-17" cy="-146" r="9.5" fill="${C.hair}"/>
+    ${eyes}
+    <path d="${mouth}" fill="none" stroke="#2E2340" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="13" cy="-122" r="4" fill="#F28B8B" opacity=".55"/>
+    <path d="${a}" fill="none" stroke="${C.skinD}" stroke-width="9.5" stroke-linecap="round"/>
+    <circle cx="${end[0]}" cy="${end[1]}" r="6" fill="${C.skin}"/>
+    ${extra}
+  </g>`;
+}
+function anaStand(x,y,o={}){return `<g transform="translate(${x},${y})">
+  <rect x="-17" y="-72" width="13" height="70" rx="6" fill="${C.leg}"/><rect x="3" y="-72" width="13" height="70" rx="6" fill="${C.leg}"/>
+  <ellipse cx="-8" cy="-2" rx="11" ry="5" fill="#2E2340"/><ellipse cx="13" cy="-2" rx="11" ry="5" fill="#2E2340"/>
+  <g transform="translate(0,-70)">${anaUpper(o)}</g></g>`;}
+function anaBall(x,y,o={}){return `<g transform="translate(${x},${y})"><g class="sway">
+  <circle cx="0" cy="-38" r="38" fill="#7FD6B5"/><path d="M -30 -60 Q 0 -80 30 -60" fill="none" stroke="#fff" stroke-width="3" opacity=".5"/>
+  <path d="M -4 -74 L 32 -68 L 36 -6" fill="none" stroke="${C.leg}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="42" cy="-4" rx="11" ry="5" fill="#2E2340"/>
+  <g transform="translate(0,-74)">${anaUpper(o)}</g></g></g>`;}
+function anaBed(x,y,o={}){return `<g transform="translate(${x},${y})">
+  <g transform="rotate(${o.rot??-16})">${anaUpper(o)}</g>
+  ${o.baby?`<g transform="translate(28,-62) rotate(-16)">${baby(0,0,{})}</g>`:''}
+  <path d="M -16 4 Q 60 -40 230 -14 L 236 14 L -24 16 Z" fill="${C.blanket}"/>
+  <path d="M -10 2 Q 60 -34 226 -10" fill="none" stroke="#E9AE3B" stroke-width="3"/></g>`;}
+function anaSupine(x,y,o={}){return `<g transform="translate(${x},${y})">
+  <rect x="0" y="-14" width="78" height="12" rx="6" fill="${C.leg}"/><rect x="0" y="0" width="78" height="12" rx="6" fill="${C.leg}"/>
+  <g transform="rotate(-90)">${anaUpper(Object.assign({arm:'down'},o))}</g></g>`;}
+function anaCat(x,y){return `<g transform="translate(${x},${y})">
+  <path d="M -2 -2 L 34 4 L 38 64" fill="none" stroke="${C.leg}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="rotate(26)">${anaUpper({mood:'calm',arm:'belly'})}</g>
+  <g fill="#FFC857">${[0,1,2,3,4].map(i=>`<circle cx="${-30-i*3}" cy="${-22-i*15}" r="3"/>`).join('')}</g></g>`;}
+function person(x,y,o={}){ // pareja o matrona, mira a la izquierda
+  const shirt=o.shirt||C.shirt, skin=o.skin||C.skin2, cap=o.cap;
+  const arm = o.arm==='reach' ? 'M -4 -150 Q -30 -120 -54 -118' : o.arm==='cup' ? 'M -4 -150 Q -26 -118 -40 -122' : 'M 6 -150 Q 0 -110 4 -84';
+  const end=arm.split(' ').slice(-2).map(Number);
+  return `<g transform="translate(${x},${y})">
+  <rect x="-16" y="-74" width="13" height="72" rx="6" fill="${o.pants||'#3A3456'}"/><rect x="3" y="-74" width="13" height="72" rx="6" fill="${o.pants||'#3A3456'}"/>
+  <ellipse cx="-12" cy="-2" rx="11" ry="5" fill="#2E2340"/><ellipse cx="9" cy="-2" rx="11" ry="5" fill="#2E2340"/>
+  <rect x="-24" y="-166" width="48" height="98" rx="18" fill="${shirt}"/>
+  <rect x="-5" y="-178" width="10" height="14" fill="${skin}"/>
+  <circle cx="-2" cy="-192" r="18" fill="${skin}"/>
+  ${cap?`<path d="M -21 -196 Q -20 -216 -2 -214 Q 17 -214 17 -196 Z" fill="${cap}"/>`:`<path d="M -20 -194 Q -22 -214 -2 -212 Q 18 -212 17 -192 Q 8 -202 -6 -200 Z" fill="${o.hair||C.hair2}"/>`}
+  <circle cx="-10" cy="-192" r="2.2" fill="#2E2340"/>
+  <path d="M -16 -183 Q -11 -179 -6 -183" fill="none" stroke="#2E2340" stroke-width="2" stroke-linecap="round"/>
+  <path d="${arm}" fill="none" stroke="${shirt}" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="${end[0]}" cy="${end[1]}" r="6" fill="${skin}"/>
+  ${o.arm==='cup'?`<g transform="translate(${end[0]-10},${end[1]-14})"><rect width="16" height="16" rx="3" fill="#fff"/><path d="M 4 -4 q 2 -5 0 -9 M 10 -4 q 2 -5 0 -9" stroke="#fff" fill="none" stroke-width="1.5" class="twinkle"/></g>`:''}
+  ${o.badge?`<rect x="-14" y="-140" width="20" height="10" rx="2" fill="#fff"/>`:''}
+  </g>`;}
+const partner=(x,y,o={})=>person(x,y,Object.assign({shirt:'#5C7CFA'},o));
+const midwife=(x,y,o={})=>person(x,y,Object.assign({shirt:C.scrub,pants:C.scrubD,cap:C.scrubD,skin:'#F1C29C',badge:true},o));
+function baby(x,y,o={}){return `<g transform="translate(${x},${y})">
+  <ellipse cx="6" cy="0" rx="25" ry="15" fill="${o.wrap||C.baby}"/>
+  <path d="M -6 -12 Q 2 0 -6 13" fill="none" stroke="#F2C95E" stroke-width="3"/>
+  <circle cx="-16" cy="-3" r="12" fill="${C.skin}"/>
+  <path d="M -22 -5 Q -19 -3 -16 -5" fill="none" stroke="#2E2340" stroke-width="1.6" stroke-linecap="round"/>
+  <circle cx="-20" cy="1" r="2.6" fill="#F28B8B" opacity=".6"/></g>`;}
+function bigBaby(x,y,id='nb'){ // recién nacido sin envolver (Apgar)
+  return `<g transform="translate(${x},${y})" id="${id}">
+  <ellipse cx="0" cy="20" rx="120" ry="22" fill="#fff" opacity=".9"/>
+  <g class="limb"><path d="M -40 -6 Q -70 -30 -82 -12" stroke="#EDB48E" stroke-width="16" fill="none" stroke-linecap="round"/><circle class="hand" cx="-84" cy="-10" r="9" fill="#8FB0DA"/></g>
+  <g><path d="M 30 -2 Q 70 -24 86 -2" stroke="#EDB48E" stroke-width="16" fill="none" stroke-linecap="round"/><circle class="hand" cx="88" cy="0" r="9" fill="#8FB0DA"/></g>
+  <path d="M -10 8 Q -30 30 -50 22" stroke="#EDB48E" stroke-width="17" fill="none" stroke-linecap="round"/><circle class="hand" cx="-54" cy="22" r="9" fill="#8FB0DA"/>
+  <path d="M 30 10 Q 50 30 66 20" stroke="#EDB48E" stroke-width="17" fill="none" stroke-linecap="round"/><circle class="hand" cx="70" cy="20" r="9" fill="#8FB0DA"/>
+  <ellipse id="nbBody" cx="10" cy="-4" rx="52" ry="34" fill="#EDB48E"/>
+  <circle id="nbHead" cx="-62" cy="-30" r="36" fill="#EDB48E"/>
+  <path d="M -80 -36 Q -74 -32 -68 -36 M -58 -36 Q -52 -32 -46 -36" fill="none" stroke="#2E2340" stroke-width="2.6" stroke-linecap="round"/>
+  <path id="nbMouth" d="M -68 -18 Q -62 -15 -56 -18" fill="none" stroke="#2E2340" stroke-width="2.6" stroke-linecap="round"/>
+  <circle cx="-80" cy="-24" r="5" fill="#F28B8B" opacity=".5"/><circle cx="-44" cy="-24" r="5" fill="#F28B8B" opacity=".5"/>
+  <path d="M 10 -36 q 6 -18 -4 -26" stroke="#E9C8A8" stroke-width="4" fill="none"/>
+  </g>`;}
+
+/* ---------- escenarios ---------- */
+function clock(cx,cy,h,m){const ha=((h%12)+m/60)*30, ma=m*6;
+  return `<g transform="translate(${cx},${cy})"><circle r="26" fill="#fff" stroke="#2E2340" stroke-width="4"/>
+  ${[0,90,180,270].map(a=>`<line x1="0" y1="-20" x2="0" y2="-16" stroke="#2E2340" stroke-width="2" transform="rotate(${a})"/>`).join('')}
+  <line x1="0" y1="0" x2="0" y2="-12" stroke="#2E2340" stroke-width="3.5" stroke-linecap="round" transform="rotate(${ha})"/>
+  <line x1="0" y1="0" x2="0" y2="-19" stroke="#E85D75" stroke-width="2.5" stroke-linecap="round" transform="rotate(${ma})"/>
+  <circle r="2.5" fill="#2E2340"/></g>`;}
+function windowSky(x,y,w,h,mode){
+  const fill={night:'url(#gNight)',eve:'url(#gEve)',day:'url(#gDay)',dawn:'url(#gDawn)'}[mode];
+  let deco='';
+  if(mode==='night') deco=`<circle cx="${x+w*.7}" cy="${y+h*.32}" r="16" fill="#FFF3C4"/><circle cx="${x+w*.7+7}" cy="${y+h*.32-5}" r="14" fill="#2A2850"/>`+
+    [[.15,.2],[.35,.5],[.25,.75],[.5,.25],[.85,.7],[.6,.6]].map(([a,b],i)=>`<circle class="twinkle" style="animation-delay:${i*.3}s" cx="${x+w*a}" cy="${y+h*b}" r="1.8" fill="#fff"/>`).join('');
+  if(mode==='eve') deco=`<circle cx="${x+w*.3}" cy="${y+h*.78}" r="24" fill="#FFE08A"/>`;
+  if(mode==='day') deco=`<circle cx="${x+w*.75}" cy="${y+h*.3}" r="20" fill="#FFE27A"/><ellipse cx="${x+w*.3}" cy="${y+h*.55}" rx="30" ry="10" fill="#fff" opacity=".9"/>`;
+  if(mode==='dawn') deco=`<circle cx="${x+w*.5}" cy="${y+h*.95}" r="26" fill="#FFE0A8"/>`;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${fill}"/>${deco}
+  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="none" stroke="#fff" stroke-width="8"/>
+  <line x1="${x+w/2}" y1="${y}" x2="${x+w/2}" y2="${y+h}" stroke="#fff" stroke-width="6"/>
+  <rect x="${x-8}" y="${y+h}" width="${w+16}" height="10" rx="4" fill="#fff"/>`;}
+function bgHome(mode,h,m){
+  const night=mode==='night';
+  const wall={night:'#4C4672',eve:'#F4CDB5',day:'#F3E4D6'}[mode]||'#F3E4D6';
+  const floor=night?'#3A3358':'#D7AE8C';
+  return `<rect width="800" height="450" fill="${wall}"/>
+  <rect y="352" width="800" height="98" fill="${floor}"/><rect y="352" width="800" height="6" fill="${night?'#2F2A4A':'#C49573'}"/>
+  ${windowSky(540,60,180,150,mode)}
+  ${clock(430,92,h,m)}
+  <g><rect x="40" y="262" width="270" height="70" rx="24" fill="${night?'#56748A':'#7FB8A6'}"/>
+     <rect x="54" y="226" width="242" height="60" rx="22" fill="${night?'#4C6A80':'#6FA996'}"/>
+     <rect x="30" y="250" width="34" height="96" rx="16" fill="${night?'#4C6A80':'#6FA996'}"/><rect x="286" y="250" width="34" height="96" rx="16" fill="${night?'#4C6A80':'#6FA996'}"/>
+     <rect x="60" y="330" width="10" height="22" fill="#2E2340"/><rect x="280" y="330" width="10" height="22" fill="#2E2340"/>
+     <rect x="80" y="238" width="58" height="40" rx="12" fill="#FFC857"/></g>
+  <ellipse cx="420" cy="398" rx="210" ry="24" fill="${night?'#463E66':'#E9C3A2'}"/>
+  <g transform="translate(748,352)"><path d="M -18 0 L -14 -36 L 14 -36 L 18 0 Z" fill="#E85D75"/>
+    <path d="M 0 -36 Q -30 -70 -22 -100 M 0 -36 Q 4 -80 2 -116 M 0 -36 Q 28 -66 26 -96" stroke="#3E9C7A" stroke-width="5" fill="none"/>
+    <ellipse cx="-22" cy="-100" rx="9" ry="16" fill="#4DB38A" transform="rotate(-20 -22 -100)"/><ellipse cx="2" cy="-116" rx="9" ry="16" fill="#4DB38A"/><ellipse cx="26" cy="-96" rx="9" ry="16" fill="#4DB38A" transform="rotate(20 26 -96)"/></g>
+  ${night?`<circle cx="352" cy="180" r="90" fill="url(#gLamp)"/>`:''}
+  <g transform="translate(352,352)"><rect x="-3" y="-160" width="6" height="160" fill="#2E2340"/><path d="M -24 -160 L 24 -160 L 14 -192 L -14 -192 Z" fill="#FFC857"/><ellipse cx="0" cy="0" rx="20" ry="5" fill="#2E2340"/></g>`;}
+function bgHospital(mode='night'){
+  return `<rect width="800" height="450" fill="#D9EBE5"/>
+  <rect y="230" width="800" height="6" fill="#C1D9D1"/>
+  <rect y="352" width="800" height="98" fill="#B9CFC8"/><rect y="352" width="800" height="5" fill="#A3BDB5"/>
+  ${windowSky(560,50,170,130,mode)}
+  <g transform="translate(300,352)"><rect x="-3" y="-250" width="6" height="250" fill="#8AA39C"/><rect x="-26" y="-250" width="52" height="5" fill="#8AA39C"/>
+    <path d="M 18 -245 l 0 10 q -10 8 -10 22 q 0 14 10 14 q 10 0 10 -14 q 0 -14 -10 -22 Z" fill="#CFEAF7" stroke="#8AA39C"/><ellipse cy="0" rx="22" ry="5" fill="#6E8780"/></g>
+  <g><path d="M 340 300 L 340 170 Q 342 150 362 150 L 392 150 Q 404 152 404 168 L 404 290 Z" fill="#9CB6AF"/>
+    <rect x="330" y="292" width="340" height="34" rx="8" fill="#9CB6AF"/>
+    <rect x="336" y="280" width="328" height="22" rx="10" fill="#fff"/>
+    <rect x="344" y="326" width="10" height="26" fill="#6E8780"/><rect x="646" y="326" width="10" height="26" fill="#6E8780"/>
+    <ellipse cx="372" cy="186" rx="28" ry="16" fill="#fff"/></g>`;}
+function bgConsulta(){
+  return `<rect width="800" height="450" fill="#E4E7F5"/><rect y="352" width="800" height="98" fill="#C9CDE3"/>
+  <g transform="translate(110,352)"><rect x="-50" y="-150" width="100" height="150" rx="10" fill="#9BA3C9"/><rect x="-42" y="-238" width="84" height="70" rx="8" fill="#2E2340"/>
+   <path d="M -30 -186 Q -10 -230 10 -200 Q 25 -180 30 -214" stroke="#7FD6B5" stroke-width="2" fill="none" class="twinkle"/><rect x="-6" y="-168" width="12" height="20" fill="#9BA3C9"/></g>`;}
+function bgRoad(){
+  const build=(off)=>[0,1,2,3,4,5,6,7,8,9].map(i=>{const w=50+((i*37)%40),h=60+((i*53)%90),x=off+i*80;return `<rect x="${x}" y="${300-h}" width="${w}" height="${h}" fill="#2B2850"/>${[0,1,2].map(k=>`<rect x="${x+10+k*14}" y="${300-h+14}" width="7" height="9" fill="#FFD27A" opacity="${(i+k)%3?0.9:0.2}"/>`).join('')}`}).join('');
+  return `<rect width="800" height="450" fill="url(#gNight)"/>
+   <circle cx="660" cy="80" r="26" fill="#FFF3C4"/><circle cx="670" cy="72" r="23" fill="#24224A"/>
+   ${[[90,60],[200,110],[320,50],[480,90],[560,40],[740,140]].map(([a,b],i)=>`<circle class="twinkle" style="animation-delay:${i*.4}s" cx="${a}" cy="${b}" r="2" fill="#fff"/>`).join('')}
+   <g class="skyline">${build(0)}${build(800)}</g>
+   <rect y="300" width="800" height="150" fill="#3B3554"/>
+   <g class="road">${Array.from({length:12},(_,i)=>`<rect x="${i*90}" y="372" width="50" height="8" rx="4" fill="#FFC857"/>`).join('')}</g>`;}
+function car(){return `<g transform="translate(380,350)"><g class="bob">
+  <path d="M 150 -40 L 330 -70 L 330 -10 Z" fill="#FFE9A8" opacity=".25"/>
+  <path d="M -150 0 L -150 -40 Q -142 -62 -100 -64 L -60 -102 Q -50 -110 -30 -110 L 60 -110 Q 82 -110 96 -92 L 122 -64 Q 152 -62 156 -40 L 156 0 Z" fill="#E85D75"/>
+  <path d="M -48 -96 L -82 -64 L -2 -64 L -2 -96 Z M 8 -96 L 8 -64 L 106 -64 L 84 -94 Z" fill="#BFE3F7"/>
+  <circle cx="-30" cy="-78" r="13" fill="${C.skin2}"/><path d="M -42 -82 Q -40 -96 -26 -94 Q -16 -92 -18 -82 Z" fill="${C.hair2}"/>
+  <circle cx="50" cy="-78" r="13" fill="${C.skin}"/><path d="M 38 -76 Q 36 -96 52 -94 Q 64 -92 62 -84 Q 50 -88 44 -76 Z" fill="${C.hair}"/><circle cx="36" cy="-92" r="6" fill="${C.hair}"/>
+  <rect x="146" y="-38" width="12" height="10" rx="3" fill="#FFE9A8"/>
+  <g transform="translate(-92,0)"><g class="spin"><circle r="24" fill="#2E2340"/><circle r="10" fill="#B9B2D3"/><rect x="-2" y="-22" width="4" height="12" fill="#B9B2D3"/></g></g>
+  <g transform="translate(104,0)"><g class="spin"><circle r="24" fill="#2E2340"/><circle r="10" fill="#B9B2D3"/><rect x="-2" y="-22" width="4" height="12" fill="#B9B2D3"/></g></g>
+  </g></g>`;}
+
+/* ---------- tarjetas (widgets) ---------- */
+function card(x,y,w,h,title,inner,cls='fade'){return `<g transform="translate(${x},${y})" class="${cls}"><rect width="${w}" height="${h}" rx="14" fill="#fff" filter="url(#sh)"/>
+  <text x="14" y="22" font-size="11" font-weight="800" fill="#7A6F9B" letter-spacing="1">${title.toUpperCase()}</text>${inner}</g>`;}
+function bumps(list,base,period){let d=`M 0 ${base}`;for(const [x0,w,h] of list){d+=` L ${x0-w/2} ${base} C ${x0-w/4} ${base} ${x0-w/5} ${base-h} ${x0} ${base-h} C ${x0+w/5} ${base-h} ${x0+w/4} ${base} ${x0+w/2} ${base}`;}d+=` L ${period} ${base}`;return d;}
+function contractionCard(kind,label){
+  const pats={irregular:[[22,30,18],[110,26,12],[168,34,28]],regular:[[25,38,44],[75,38,46],[125,38,45],[175,38,46]],flat:[[60,26,7],[150,24,6]]};
+  const p=bumps(pats[kind],56,200);
+  return card(20,20,290,118,'Contracciones',`<g transform="translate(25,34)"><g clip-path="url(#clipPlot)">
+    ${[0,50,100,150].map(x=>`<line x1="${x}" y1="0" x2="${x}" y2="60" stroke="#EEEAF6"/>`).join('')}
+    <g class="scroll"><path d="${p}" fill="none" stroke="#E85D75" stroke-width="3" stroke-linejoin="round"/><path d="${p}" transform="translate(200,0)" fill="none" stroke="#E85D75" stroke-width="3"/></g></g>
+    <line x1="0" y1="60" x2="200" y2="60" stroke="#D5CFE6"/></g>
+    <text x="14" y="108" font-size="12.5" font-weight="700" fill="#2E2340">${label}</text>`);}
+function dilationCard(cm,phase){
+  return card(20,20,250,128,'Dilatación del cuello',`
+   <g transform="translate(62,78)"><circle r="40" fill="#F6B6AE"/><circle r="40" fill="none" stroke="#E85D75" stroke-width="3"/>
+     <circle id="dilHole" r="${4+cm*3.4}" fill="${C.skin}" stroke="#3BAF86" stroke-width="3"/></g>
+   <text id="dilTxt" x="120" y="66" font-family="Baloo 2" font-size="34" font-weight="800" fill="#2E2340">${cm} cm</text>
+   <text id="dilPh" x="120" y="86" font-size="12" font-weight="700" fill="#7A6F9B">${phase}</text>
+   <g transform="translate(120,98)"><rect width="50" height="8" rx="4" fill="#F6D9A8"/><rect x="56" width="60" height="8" rx="4" fill="#9FDCC2"/>
+     <path id="dilMark" d="M 0 -3 l -5 -7 l 10 0 Z" transform="translate(${cm*11.6},0)" fill="#2E2340"/>
+     <text x="0" y="22" font-size="10" fill="#7A6F9B">0</text><text x="50" y="22" font-size="10" fill="#7A6F9B">5</text><text x="110" y="22" font-size="10" fill="#7A6F9B">10</text></g>`);}
+function setDilation(from,to,dur=2200){tween(dur,e=>{const v=from+(to-from)*e;const h=$('dilHole'),t=$('dilTxt'),m=$('dilMark'),p=$('dilPh');
+  if(!h)return;h.setAttribute('r',4+v*3.4);t.textContent=Math.round(v)+' cm';m.setAttribute('transform',`translate(${v*11.6},0)`);
+  p.textContent=v>=10?'Completa: ¡a empujar!':v>=5?'Fase activa (5–10 cm)':'Fase latente (0–4 cm)';});}
+function stationCard(st){
+  const yOf=s=>60+(s+3)*14;
+  return card(20,20,250,170,'Descenso del bebé',`
+   <g transform="translate(40,0)"><rect x="-6" y="56" width="12" height="90" rx="6" fill="#EEEAF6"/>
+   ${[-3,-2,-1,0,1,2,3].map(s=>`<line x1="-12" y1="${yOf(s)}" x2="12" y2="${yOf(s)}" stroke="${s===0?'#E85D75':'#C9C1DE'}" stroke-width="${s===0?3:1.5}"/><text x="18" y="${yOf(s)+4}" font-size="10.5" fill="#7A6F9B">${s>0?'+'+s:s}</text>`).join('')}
+   <circle id="stHead" cx="0" cy="${yOf(st)}" r="11" fill="${C.skin}" stroke="#2E2340" stroke-width="2"/></g>
+   <text x="100" y="62" font-size="11" fill="#7A6F9B">Estación (cm respecto</text><text x="100" y="76" font-size="11" fill="#7A6F9B">a las espinas ciáticas)</text>
+   <text id="stTxt" x="100" y="118" font-family="Baloo 2" font-size="30" font-weight="800" fill="#2E2340">${st>0?'+'+st:st}</text>
+   <text id="stLbl" x="100" y="140" font-size="12" font-weight="700" fill="#7A6F9B">Alta</text>`);}
+function setStation(from,to,dur=2600){const yOf=s=>60+(s+3)*14;tween(dur,e=>{const v=from+(to-from)*e;const h=$('stHead');if(!h)return;h.setAttribute('cy',yOf(v));
+  const r=Math.round(v);$('stTxt').textContent=r>0?'+'+r:r;$('stLbl').textContent=r>=3?'¡Coronación!':r>=0?'Encajado':'Alta';});}
+function fcfCard(){
+  const k=110/80, yL=l=>(180-l)*k;
+  let d='',t='';
+  for(let x=0;x<=320;x+=4){let l=140+Math.sin(x*.21)*4+Math.sin(x*.07+1)*3+Math.sin(x*.53)*2;const g=Math.exp(-Math.pow((x-190)/16,2));l+=g*20;d+=(x?' L ':'M ')+x+' '+yL(l).toFixed(1);
+    const c=10+38*Math.exp(-Math.pow((x-185)/24,2))+36*Math.exp(-Math.pow((x-40)/24,2));t+=(x?' L ':'M ')+x+' '+(40-c*.7).toFixed(1);}
+  return card(20,20,360,206,'Monitor fetal',`
+   <g transform="translate(24,32)">
+    <rect x="0" y="${yL(160)}" width="320" height="${yL(110)-yL(160)}" fill="#DDF5EA"/>
+    <text x="324" y="${yL(160)+4}" font-size="9.5" fill="#7A6F9B">160</text><text x="324" y="${yL(110)+4}" font-size="9.5" fill="#7A6F9B">110</text>
+    <path class="draw" d="${d}" fill="none" stroke="#E85D75" stroke-width="2.4"/>
+    <g id="accHi" opacity="0"><ellipse cx="190" cy="${yL(158)}" rx="26" ry="20" fill="none" stroke="#3BAF86" stroke-width="3" stroke-dasharray="5 4"/>
+      <rect x="140" y="-4" width="98" height="18" rx="9" fill="#3BAF86"/><text x="189" y="9" font-size="11" text-anchor="middle" font-weight="800" fill="#fff">+15 lpm · 15 s</text></g>
+   </g>
+   <g transform="translate(24,150)"><text x="0" y="-4" font-size="9.5" fill="#7A6F9B" font-weight="700">TOCOGRAMA</text><path class="draw" d="${t}" fill="none" stroke="#5C7CFA" stroke-width="2" transform="translate(0,4)"/></g>
+   <g transform="translate(300,22)"><path class="beat" d="M 0 4 C -12 -8 -2 -16 0 -8 C 2 -16 12 -8 0 4 Z" fill="#E85D75"/></g>
+   <text x="252" y="24" font-size="11" font-weight="800" fill="#2E2340">140 lpm</text>`);}
+function apgarCard(which){
+  const rows=[['Frecuencia cardiaca','110 lpm',2,'130 lpm',2],['Respiración','Irregular',1,'Llanto fuerte',2],['Tono','Algo flexionado',1,'Se mueve activo',2],['Reflejos','Mueca',1,'Llora al estimular',2],['Color','Manos y pies azules',1,'Manos y pies azules',1]];
+  const five=which===5; const tot=five?9:6;
+  return card(494,20,286,214,`Test de Apgar · ${five?'5 minutos':'1 minuto'}`,`
+   ${rows.map((r,i)=>`<g transform="translate(14,${44+i*28})"><text x="0" y="0" font-size="11" fill="#7A6F9B">${r[0]}</text><text x="0" y="14" font-size="12.5" font-weight="700" fill="#2E2340">${five?r[3]:r[1]}</text>
+     <circle cx="244" cy="5" r="11" fill="${(five?r[4]:r[2])===2?'#9FDCC2':'#F6D9A8'}"/><text x="244" y="9.5" font-size="12" text-anchor="middle" font-weight="800" fill="#2E2340">${five?r[4]:r[2]}</text></g>`).join('')}
+   <rect x="14" y="184" width="258" height="22" rx="11" fill="${five?'#3BAF86':'#F2A93B'}"/>
+   <text x="143" y="199" text-anchor="middle" font-size="12.5" font-weight="800" fill="#fff">Total ${tot} · ${five?'Normal (7–10)':'Necesita ayuda (4–6)'}</text>`, five?'pop':'fade');}
+function dropCard(color,label){return card(20,20,220,120,'Líquido amniótico',`
+   <g transform="translate(52,74)" class="pop"><path d="M 0 -38 C 18 -14 26 2 26 14 A 26 26 0 0 1 -26 14 C -26 2 -18 -14 0 -38 Z" fill="${color}" stroke="#9BB7C9" stroke-width="2"/>
+   <circle cx="-8" cy="12" r="3" fill="#fff"/><circle cx="6" cy="20" r="2.4" fill="#fff"/><circle cx="2" cy="6" r="2" fill="#fff"/><ellipse cx="-10" cy="0" rx="4" ry="8" fill="#fff" opacity=".6"/></g>
+   <text x="96" y="62" font-size="13" font-weight="800" fill="#2E2340">${label[0]}</text><text x="96" y="80" font-size="12" fill="#7A6F9B">${label[1]}</text><text x="96" y="96" font-size="12" fill="#7A6F9B">${label[2]||''}</text>`);}
+function spineCard(){return card(20,20,240,190,'Dónde va la epidural',`
+   <g transform="translate(40,40)">${[0,1,2,3].map(i=>`<rect x="0" y="${i*34}" width="58" height="26" rx="6" fill="#F6D9A8"/><rect x="4" y="${i*34+26}" width="50" height="8" fill="#9FDCC2"/><path d="M 74 ${i*34+4} l 34 8 l -34 8 Z" fill="#F6D9A8"/>`).join('')}
+   <rect x="60" y="0" width="12" height="136" fill="#CFE6F7"/><rect x="72" y="0" width="5" height="136" fill="#FFE3B0"/>
+   <path class="draw" d="M 170 64 L 90 64 Q 76 64 75 76 L 75 120" fill="none" stroke="#E85D75" stroke-width="3" style="stroke-dasharray:240;stroke-dashoffset:240;animation-duration:1.6s"/></g>
+   <text x="126" y="58" font-size="10.5" fill="#7A6F9B">L2–L3 / L3–L4</text><text x="126" y="150" font-size="10.5" fill="#7A6F9B">Catéter en el</text><text x="126" y="163" font-size="10.5" fill="#7A6F9B">espacio epidural</text>`);}
+function noteCard(lines){return card(500,26,270,150,'Lo anoto para contarlo',lines.map((l,i)=>`<g transform="translate(16,${50+i*24})" class="pop" style="animation-delay:${.3+i*.35}s"><rect width="18" height="18" rx="5" fill="#9FDCC2"/><path d="M 4 9 l 4 4 l 7 -8" stroke="#1F6B52" stroke-width="2.4" fill="none"/><text x="28" y="14" font-size="13" fill="#2E2340"><tspan font-weight="800">${l[0]}</tspan> ${l[1]}</text></g>`).join(''),'pop');}
+
+/* ---------- efectos ---------- */
+function bubble(x,y,text,o={}){
+  const w=o.w||230, lines=wrap(text,Math.floor(w/7.4)), h=lines.length*18+20, tail=o.tail||'left', col=o.color||'#fff', tc=o.tc||'#2E2340';
+  const tp = tail==='left'?`M 22 ${h-2} l -10 18 l 30 -18 Z`:tail==='right'?`M ${w-42} ${h-2} l 30 18 l -10 -18 Z`:'';
+  return `<g transform="translate(${x},${y})"><g class="pop" style="transform-origin:${tail==='right'?'90%':'10%'} 100%">
+   <rect width="${w}" height="${h}" rx="16" fill="${col}" filter="url(#sh)"/><path d="${tp}" fill="${col}"/>
+   <text x="14" y="25" font-size="14" font-weight="700" fill="${tc}">${lines.map((l,i)=>`<tspan x="14" dy="${i?18:0}">${l}</tspan>`).join('')}</text></g></g>`;}
+function hearts(x,y,n=6){return Array.from({length:n},(_,i)=>`<g transform="translate(${x+(i%3-1)*26+(i*7%11)},${y})"><g class="floatUp" style="animation-delay:${i*.42}s"><path d="M 0 6 C -14 -6 -4 -16 0 -7 C 4 -16 14 -6 0 6 Z" fill="${i%2?'#FF8A7A':'#E85D75'}"/></g></g>`).join('');}
+function dizzy(x,y){return `<g transform="translate(${x},${y})"><g class="orbit" style="transform-origin:${x}px ${y}px">${[0,120,240].map(a=>`<g transform="rotate(${a}) translate(26,0)"><path d="M 0 -7 L 2 -2 L 7 -2 L 3 1 L 5 7 L 0 3 L -5 7 L -3 1 L -7 -2 L -2 -2 Z" fill="#FFC857"/></g>`).join('')}</g></g>`;}
+function shower(x,y){return `<g transform="translate(${x},${y})"><path d="M -60 -40 L -60 -70 L 0 -70" stroke="#9AA3B8" stroke-width="6" fill="none"/><path d="M -22 -70 L 22 -70 L 14 -56 L -14 -56 Z" fill="#B9C1D3"/>
+  ${Array.from({length:14},(_,i)=>`<line class="fall" style="animation-delay:${(i*.13)%1}s" x1="${-16+(i*5)%34}" y1="-52" x2="${-18+(i*5)%34}" y2="-40" stroke="#8EC5FF" stroke-width="3" stroke-linecap="round"/>`).join('')}</g>`;}
+function steam(x,y){return `<g transform="translate(${x},${y})">${[0,1,2].map(i=>`<path class="floatUp" style="animation-delay:${i*.6}s" d="M ${i*10-10} 0 q 6 -10 0 -20 q -6 -10 0 -20" stroke="#fff" stroke-width="3" fill="none" opacity=".7"/>`).join('')}</g>`;}
+function battery(x,y,lvl){return `<g transform="translate(${x},${y})" class="pop"><rect width="54" height="26" rx="6" fill="#fff" stroke="#2E2340" stroke-width="3"/><rect x="54" y="8" width="5" height="10" rx="2" fill="#2E2340"/><rect x="5" y="5" width="${44*lvl}" height="16" rx="3" fill="${lvl<.3?'#FF6B6B':'#3BAF86'}"/></g>`;}
+function cloud(x,y,dark,cls='fade'){return `<g transform="translate(${x},${y})" class="${cls}"><g class="bob"><path d="M -50 10 Q -60 -14 -34 -18 Q -28 -42 0 -36 Q 20 -50 38 -28 Q 62 -26 56 4 Q 56 14 40 14 L -40 14 Q -52 14 -50 10 Z" fill="${dark?'#6E6A88':'#A9A6C2'}"/>
+  ${Array.from({length:6},(_,i)=>`<line class="fall" style="animation-delay:${i*.17}s" x1="${-36+i*14}" y1="20" x2="${-38+i*14}" y2="30" stroke="#8EC5FF" stroke-width="3" stroke-linecap="round"/>`).join('')}</g></g>`;}
+function sunburst(x,y){return `<g transform="translate(${x},${y})" class="pop"><g class="spin" style="animation-duration:12s">${Array.from({length:12},(_,i)=>`<rect x="-3" y="-58" width="6" height="18" rx="3" fill="#FFC857" transform="rotate(${i*30})"/>`).join('')}</g><circle r="32" fill="#FFD66E"/></g>`;}
+function timerRing(x,y){return `<g transform="translate(${x},${y})" class="pop"><circle r="34" fill="#fff" filter="url(#sh)"/><circle r="26" fill="none" stroke="#EEEAF6" stroke-width="7"/>
+  <circle r="26" fill="none" stroke="#3BAF86" stroke-width="7" stroke-linecap="round" transform="rotate(-90)" style="stroke-dasharray:164;stroke-dashoffset:164;animation:draw 2.4s linear forwards"/>
+  <text y="5" text-anchor="middle" font-family="Baloo 2" font-weight="800" font-size="16" fill="#2E2340">1 min</text></g>`;}
+function scissors(x,y){return `<g transform="translate(${x},${y})" class="pop" style="animation-delay:2.4s"><circle cx="-10" cy="10" r="7" fill="none" stroke="#2E2340" stroke-width="3.5"/><circle cx="10" cy="10" r="7" fill="none" stroke="#2E2340" stroke-width="3.5"/><path d="M -6 4 L 10 -24 M 6 4 L -10 -24" stroke="#9AA3B8" stroke-width="4" stroke-linecap="round"/></g>`;}
+function bigMark(ok){return `<g transform="translate(740,395)" class="pop"><circle r="30" fill="${ok?'#3BAF86':'#FF6B6B'}" filter="url(#sh)"/>${ok?'<path d="M -13 1 l 9 9 l 17 -19" stroke="#fff" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>':'<path d="M -10 -10 l 20 20 M 10 -10 l -20 20" stroke="#fff" stroke-width="6" stroke-linecap="round"/>'}</g>`;}
+function crib(x,y){return `<g transform="translate(${x},${y})" class="pop"><rect x="-60" y="-70" width="120" height="60" rx="10" fill="#fff" stroke="#9CB6AF" stroke-width="4"/>${[-40,-20,0,20,40].map(i=>`<line x1="${i}" y1="-70" x2="${i}" y2="-10" stroke="#9CB6AF" stroke-width="3"/>`).join('')}<rect x="-50" y="-10" width="8" height="10" fill="#9CB6AF"/><rect x="42" y="-10" width="8" height="10" fill="#9CB6AF"/></g>`;}
+function phoneCall(x,y,label){return `<g transform="translate(${x},${y})" class="pop"><rect width="210" height="64" rx="16" fill="#3BAF86" filter="url(#sh)"/><g transform="translate(32,32)"><circle r="20" fill="#fff"/><path d="M -8 -9 q -2 12 9 18 l 4 -4 l -4 -5 l -3 2 q -4 -3 -5 -8 l 3 -2 l -2 -5 Z" fill="#3BAF86" class="bob"/></g><text x="62" y="28" font-size="11" font-weight="800" fill="#DFFFF1">LLAMANDO…</text><text x="62" y="47" font-size="14" font-weight="800" fill="#fff">${label}</text></g>`;}
+
+/* ---------- útero (ecografía) ---------- */
+function uterus(){return `<g transform="translate(470,222)">
+  <circle r="160" fill="${C.skin}"/><circle r="160" fill="none" stroke="${C.skinD}" stroke-width="4"/>
+  <ellipse rx="128" ry="136" fill="#F4A9A5"/><ellipse rx="114" ry="122" fill="#FCE3DA"/>
+  <ellipse cx="62" cy="-96" rx="44" ry="18" fill="#C9586B" transform="rotate(28 62 -96)"/>
+  <path d="M -112 118 Q -70 70 -38 120 M 112 118 Q 70 70 38 120" stroke="#F1E6C9" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <g id="fetusRot"><g class="wobble" id="fetusW">
+    <ellipse cx="0" cy="-26" rx="44" ry="56" fill="${C.skin}"/>
+    <path d="M 30 -40 Q 70 -60 40 -78" stroke="${C.skin}" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <path d="M -30 -50 Q -60 -70 -26 -82" stroke="${C.skin}" stroke-width="22" fill="none" stroke-linecap="round"/>
+    <path d="M 26 10 Q 40 30 20 44" stroke="${C.skinD}" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <circle cx="0" cy="48" r="38" fill="${C.skin}"/>
+    <path d="M 12 52 Q 18 56 24 52" stroke="#2E2340" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <circle cx="22" cy="62" r="5" fill="#F28B8B" opacity=".5"/>
+    <path d="M -8 -10 Q 30 -30 50 -84" stroke="#C9586B" stroke-width="5" fill="none" opacity=".7"/>
+  </g></g></g>`;}
+
+/* ---------- escenas ---------- */
+const PH=['Preparto','Parto','Posparto'];
+const S=[
+/* 0 */ {ph:0,time:'Semana 36',title:'La ecografía',
+  bg:()=>bgConsulta(),
+  actors:()=>uterus()+midwife(160,420),
+  widget:()=>'',
+  who:'Matrona',text:'Ana está de 36 semanas y es su primer bebé. En la ecografía el bebé todavía se da la vuelta. <strong>¿En qué colocación es mejor que esté para un parto vaginal?</strong>',
+  onEnter(){$('fetusW').style.animation='wobbleBig 3.2s ease-in-out infinite';},
+  choices:[
+   {t:'Podálica: de nalgas, con los pies abajo',rot:180,bub:'De nalgas solo nace así un 3–4 %. Podemos intentar girarlo hacia la semana 36–37.',m:0,b:-5,
+    fb:'Solo un 3–4 % de los bebés está de nalgas a término. Se puede intentar girarlo desde fuera (versión cefálica externa) hacia la semana 36–37; si no gira, se valora cesárea programada o un parto de nalgas en un hospital con experiencia.'},
+   {t:'Cefálica: cabeza abajo',ok:true,rot:0,bub:'¡Perfecto! Cabeza abajo y bien flexionada: el diámetro más pequeño (≈9,5 cm).',m:5,b:10,
+    fb:'Alrededor del 95–96 % de los bebés está cabeza abajo a término: es la colocación más favorable. Con la barbilla pegada al pecho, el diámetro que pasa por la pelvis es el menor (≈9,5 cm).'},
+   {t:'Transversa: atravesado',rot:90,bub:'Atravesado ocurre en menos del 1 %. Si sigue así al final, el parto será por cesárea.',m:-5,b:-5,
+    fb:'La situación transversa es muy poco frecuente (<1 %). Si se mantiene al final del embarazo, el parto tiene que ser por cesárea.'}],
+  run(c){const g=$('fetusRot'),w=$('fetusW');w.style.animation='none';const r0=40;tween(1800,e=>g.setAttribute('transform',`translate(0,${c.rot===0?e*18:0}) rotate(${r0+(c.rot-r0)*e})`));
+    fx(bubble(560,30,c.bub,{w:220,tail:'left'}));
+    if(c.ok) addFx(`<g transform="translate(470,240)">${hearts(0,-60,4)}</g>`);}
+},
+/* 1 */ {ph:0,time:'Semana 38 · 18:30',title:'Tripa dura',clock:[6,30],
+  bg:()=>bgHome('eve',6,30),
+  actors:()=>anaStand(470,372,{arm:'belly',mood:'tired'}),
+  widget:()=>contractionCard('irregular','Irregulares · ceden con reposo'),
+  who:'Ana',text:'«Se me pone la tripa dura de vez en cuando. No me duele mucho y no sigue un ritmo.» <strong>¿Qué hace Ana?</strong>',
+  onEnter(){glowBelly(true);},
+  choices:[
+   {t:'Ir corriendo a urgencias',bub:'En urgencias: «Son contracciones de Braxton Hicks. Puedes volver a casa».',m:-5,b:0,
+    fb:'Son contracciones de Braxton Hicks: irregulares, indoloras o poco dolorosas, que preparan el útero pero no dilatan el cuello. Consulta si son regulares antes de la semana 37 o si duelen cada vez más.'},
+   {t:'Descansar, darse una ducha caliente y observar',ok:true,bub:'¡Se me ha pasado! Eran de las que preparan el útero.',m:10,b:5,
+    actors:()=>anaStand(470,372,{arm:'belly',mood:'happy'})+shower(470,200),widget:()=>contractionCard('flat','Se espacian y desaparecen'),
+    fb:'Bien visto. Las de Braxton Hicks son irregulares y ceden con reposo o una ducha. No dilatan el cuello. Si se vuelven regulares antes de la semana 37 o duelen cada vez más, hay que consultar.'},
+   {t:'Tumbarse boca arriba sin moverse',bub:'Uf… me mareo tumbada así.',m:-10,b:-5,
+    actors:()=>anaSupine(400,330,{mood:'tired'})+dizzy(270,290),
+    fb:'Boca arriba, el útero puede comprimir la vena cava (el volumen de sangre ha subido un 40–50 %) y producir mareo. Mejor de lado. Además, estas contracciones (Braxton Hicks) ceden con reposo o ducha.'}],
+  run(c){glowBelly(false);if(c.actors)setActors(c.actors());if(c.widget)setWidget(c.widget());fx(bubble(500,40,c.bub,{w:250,tail:'left'}));}
+},
+/* 2 */ {ph:0,time:'Semana 39 · 17:00',title:'Empieza algo',
+  bg:()=>bgHome('eve',5,0),
+  actors:()=>anaStand(470,372,{arm:'phone',mood:'calm'}),
+  widget:()=>contractionCard('irregular','Cada 7–18 min · 30 s · ceden con la ducha'),
+  who:'Ana',text:'«Llevo una hora apuntando las contracciones en la app: <strong>cada 7–18 minutos, de unos 30 segundos</strong>, y se calman en la ducha.» ¿Qué hace?',
+  choices:[
+   {t:'Ir ya al hospital, por si acaso',bub:'«2 cm, fase latente. Estarás mejor en casa.» Vuelta a casa.',m:-5,b:0,
+    actors:()=>anaStand(470,372,{arm:'down',mood:'sad'}),
+    fb:'Esto son pródromos o fase latente (0–4 cm): contracciones irregulares que ceden con la ducha. Esta fase se pasa mejor en casa, e ingresar en ella aumenta las intervenciones sin beneficio. Que te manden a casa no es un fracaso: es lo habitual.'},
+   {t:'Quedarse en casa: comer algo ligero, descansar y moverse',ok:true,bub:'Caldo, fruta y pelota. ¡A guardar energía!',m:10,b:5,
+    actors:()=>anaBall(440,372,{mood:'happy',arm:'belly'})+`<g transform="translate(640,352)" class="pop"><rect x="-50" y="-60" width="100" height="10" rx="4" fill="#C49573"/><rect x="-6" y="-50" width="12" height="50" fill="#C49573"/><path d="M -36 -60 q 14 18 28 0 Z" fill="#fff"/><circle cx="20" cy="-68" r="9" fill="#FF8A7A"/><circle cx="34" cy="-66" r="7" fill="#FFC857"/></g>`+steam(618,282),
+    widget:()=>dilationCard(2,'Fase latente (0–4 cm)'),
+    fb:'Correcto: es fase latente. Se pasa mejor en casa con descanso, hidratación, comida ligera y ducha caliente. Su duración es muy variable y puede alargarse horas o días.'},
+   {t:'Dejar de comer y beber por si la operan',bub:'Sin comer… me quedo sin energía.',m:-10,b:0,
+    actors:()=>anaStand(470,372,{arm:'down',mood:'tired'})+battery(520,150,.15),
+    fb:'En un parto de bajo riesgo, la OMS recomienda beber y comer algo ligero si apetece: caldo, fruta, zumo, galletas. El ayuno quita energía para las horas que vienen.'}],
+  run(c){if(c.actors)setActors(c.actors());if(c.widget)setWidget(c.widget());fx(bubble(500,40,c.bub,{w:250}));}
+},
+/* 3 */ {ph:0,time:'23:00',title:'Ahora sí',
+  bg:()=>bgHome('night',11,0),
+  actors:()=>anaStand(420,372,{arm:'back',mood:'pain'})+partner(560,372,{arm:'reach'}),
+  widget:()=>contractionCard('regular','Cada 5 min · ≈55 s · cada vez más fuertes'),
+  who:'Ana',text:'«Ahora vienen <strong>cada 5 minutos, de casi un minuto</strong>, empiezan en la espalda y ya no se calman con la ducha.» Lleva así más de una hora. ¿Qué hacen?',
+  onEnter(){glowBelly(true);},
+  choices:[
+   {t:'Esperar a que sean cada minuto',bub:'¡Casi no llegamos! Mejor no apurar tanto.',m:-10,b:-5,
+    fb:'En un primer parto se recomienda acudir cuando las contracciones son regulares, cada ≈5 minutos durante 1–2 horas. Si no es el primero, antes (cada 5–10 min) o si vives lejos.'},
+   {t:'Coger la bolsa e ir al hospital',ok:true,bub:'¡Bolsa, plan de parto y al coche!',m:10,b:5,road:true,
+    fb:'Correcto. Primer parto y contracciones regulares cada 5 minutos durante más de una hora, más intensas y que no ceden: es fase activa. Truco: se cuenta desde el inicio de una contracción hasta el inicio de la siguiente.'},
+   {t:'Intentar dormir y mañana ya se verá',bub:'Imposible dormir: no ceden con el reposo.',m:-5,b:0,
+    fb:'Cuando las contracciones son regulares, cada vez más seguidas e intensas y no ceden con el reposo, ya no son pródromos: es el momento de ir al hospital.'}],
+  run(c){glowBelly(false);if(c.road){setBg(bgRoad());setActors(car());setWidget('');fx(bubble(150,60,c.bub,{w:240}));}else fx(bubble(470,60,c.bub,{w:250}));}
+},
+/* 4 */ {ph:0,time:'23:40',title:'¡Plof! en el coche',
+  bg:()=>bgRoad(), actors:()=>car(),
+  widget:()=>dropCard('#EAF6FF',['Claro','con grumitos blancos','y bastante cantidad']),
+  who:'Narrador',text:'De camino, Ana nota un chorro caliente: <strong>ha roto la bolsa</strong>. El líquido es claro, con grumitos blancos. ¿Qué es lo más útil ahora?',
+  choices:[
+   {t:'Los grumos son pus: es una infección grave',bub:'¡Falsa alarma! Esos grumos son vérnix, la crema protectora del bebé.',m:-5,b:0,
+    fb:'El líquido claro o rosado es normal, y los grumos blancos son vérnix. Lo urgente sería un líquido verde o marrón (meconio) o con sangre.'},
+   {t:'Anotar hora, color, cantidad y olor para contarlo',ok:true,m:5,b:10,note:true,
+    fb:'¡Eso es! Al llegar te preguntarán la HORA, el COLOR, la CANTIDAD y el OLOR. Así se interpreta lo que significa cada color:'},
+   {t:'No tiene importancia, no hace falta contarlo',bub:'Sí importa: el color del líquido da mucha información.',m:-5,b:-5,
+    fb:'Es importante contarlo. El color dice mucho: claro es normal; verde o marrón indica meconio y hay que acudir de inmediato; con sangre es una urgencia.'}],
+  extra:`<div class="drops"><div><i style="background:#EAF6FF"></i>Claro o rosado: normal</div><div><i style="background:#8C9A4B"></i>Verde o marrón: meconio, acudir de inmediato</div><div><i style="background:#C2384E"></i>Con sangre: urgencia</div></div>`,
+  run(c){if(c.note){fx(noteCard([['23:40','hora de la rotura'],['Claro','con vérnix'],['Abundante','cantidad'],['Sin olor','olor']]));}else fx(bubble(300,40,c.bub,{w:260}));}
+},
+/* 5 */ {ph:1,time:'00:30',title:'Fase activa',
+  bg:()=>bgHospital('night'),
+  actors:()=>anaStand(470,372,{arm:'back',mood:'pain'})+partner(610,372)+midwife(220,372),
+  widget:()=>dilationCard(5,'Fase activa (5–10 cm)'),
+  who:'Matrona',text:'«Estás de <strong>5 cm</strong>: ya es fase activa.» Ana puede elegir cómo pasar la dilatación. ¿Qué le sienta mejor?',
+  onEnter(){glowBelly(true);},
+  choices:[
+   {t:'Tumbada boca arriba, sin moverse',bub:'Me duele más la espalda… y la dilatación no avanza.',m:-10,b:-5,
+    actors:()=>anaSupine(440,300,{mood:'pain'})+partner(640,372)+midwife(220,372),
+    fb:'Tumbada boca arriba el útero comprime la vena cava y la gravedad no ayuda. Caminar y cambiar de postura acorta la dilatación; en el expulsivo también conviene evitar estar boca arriba.'},
+   {t:'Moverse: pelota, ducha caliente y su pareja al lado',ok:true,bub:'Balanceo, agua caliente y masaje lumbar… ¡7 cm!',m:10,b:10,
+    actors:()=>anaBall(470,372,{mood:'calm',arm:'belly'})+partner(560,372,{arm:'reach'})+midwife(220,372),dil:[5,7],
+    fb:'Moverse libremente, el agua caliente y el acompañamiento continuo reducen el dolor y la necesidad de analgesia. La pelota abre la pelvis con balanceos y círculos de cadera. Orientativo: hasta unas 12 h de fase activa en el primer parto.'},
+   {t:'No beber ni comer nada hasta el final',bub:'Sin energía para lo que queda…',m:-10,b:0,
+    actors:()=>anaStand(470,372,{arm:'down',mood:'tired'})+partner(610,372)+midwife(220,372)+battery(500,150,.15),
+    fb:'En un parto de bajo riesgo se puede beber y comer algo ligero. El ayuno no ayuda; el movimiento, el agua caliente y el apoyo sí.'}],
+  run(c){glowBelly(false);if(c.actors)setActors(c.actors());if(c.dil)setDilation(c.dil[0],c.dil[1]);fx(bubble(500,40,c.bub,{w:260}));}
+},
+/* 6 */ {ph:1,time:'02:00',title:'El monitor',
+  bg:()=>bgHospital('night'),
+  actors:()=>anaBed(400,300,{mood:'calm',arm:'belly'})+partner(720,372),
+  widget:()=>fcfCard(),
+  who:'Ana',text:'En el monitor, <strong>el latido del bebé sube un momento</strong> y luego vuelve a 140. ¿Qué significa?',
+  choices:[
+   {t:'Que el bebé está bien',ok:true,bub:'Una aceleración: bebé bien oxigenado y reactivo.',m:5,b:10,
+    fb:'Las aceleraciones (subidas de 15 latidos durante 15 segundos) son un signo de bienestar. Lo normal: línea de base de 110–160 lpm y variabilidad de 5–25 lpm.'},
+   {t:'Que es una señal de alarma',bub:'Tranquila: subir así es buena señal.',m:-5,b:0,
+    fb:'Al revés: una aceleración es un signo de bienestar. Lo que se valora con más atención son las deceleraciones tardías (empiezan tras el pico de la contracción).'},
+   {t:'Que el aparato ha fallado',bub:'El monitor va bien: es el bebé reaccionando.',m:-5,b:0,
+    fb:'No es un fallo: es una aceleración, una subida de unos 15 latidos durante 15 segundos, y significa que el bebé está bien. En partos de bajo riesgo hay monitores inalámbricos para poder moverse.'}],
+  run(c){$('accHi').style.transition='opacity .5s';$('accHi').setAttribute('opacity',1);if(c.ok)addFx(`<g transform="translate(560,240)">${hearts(0,0,5)}</g>`);fx(bubble(420,250,c.bub,{w:260,tail:'left'}),true);}
+},
+/* 7 */ {ph:1,time:'03:15',title:'¿Epidural?',
+  bg:()=>bgHospital('night'),
+  actors:()=>anaBed(400,300,{mood:'pain',arm:'belly'})+partner(720,372),
+  widget:()=>dilationCard(7,'Fase activa (5–10 cm)'),
+  who:'Ana',text:'«Estoy de 7 cm y ya no puedo más. ¿Llego tarde para la epidural?» <strong>¿Qué le responden?</strong>',
+  choices:[
+   {t:'«Sí: a partir de 5 cm ya no se puede poner»',bub:'¡No es así! No hay un límite de centímetros.',m:-10,b:0,
+    fb:'No hay un número de centímetros a partir del cual esté prohibida. Solo si el nacimiento es inminente puede no dar tiempo a que haga efecto.'},
+   {t:'«Se puede. Siéntate curvando la espalda como un gato»',ok:true,bub:'15–20 minutos después… ¡qué alivio!',m:15,b:0,
+    actors:()=>anaCat(470,300)+partner(720,372),widget:()=>spineCard(),
+    fb:'Se puede poner en cualquier momento de la fase activa. Antes: analítica de coagulación, vía venosa y sueros. Con la espalda curvada, la aguja entra entre L2–L3 o L3–L4 y deja un catéter fino. Hace efecto en 15–20 min. No aumenta las cesáreas (Cochrane).'},
+   {t:'«Mejor no, que aumenta las cesáreas»',bub:'Eso es un mito: no aumenta las cesáreas.',m:-10,b:0,
+    fb:'Las revisiones Cochrane no muestran más cesáreas con la epidural. Sí puede alargar el expulsivo y aumentar el uso de ventosa o fórceps, y conviene vigilar la tensión y la fiebre.'}],
+  run(c){if(c.actors)setActors(c.actors());if(c.widget)setWidget(c.widget());fx(bubble(500,30,c.bub,{w:250}));
+    if(c.ok)setTimeout(()=>{setActors(anaBed(400,300,{mood:'happy',arm:'belly'})+partner(720,372));addFx(`<g transform="translate(470,160)">${hearts(0,0,4)}</g>`)},2600);}
+},
+/* 8 */ {ph:1,time:'05:30',title:'10 cm',
+  bg:()=>bgHospital('dawn'),
+  actors:()=>anaBed(400,300,{mood:'calm',arm:'belly'})+partner(720,372)+midwife(240,372),
+  widget:()=>stationCard(-1),
+  who:'Matrona',text:'Dilatación completa. Con la epidural, <strong>Ana no siente ganas de empujar</strong> y el bebé está en estación −1. ¿Qué hacemos?',
+  choices:[
+   {t:'Empujar ya con todas sus fuerzas, aguantando el aire',bub:'Estoy agotada… y apenas baja.',m:-10,b:-5,st:[-1,0],
+    actors:()=>anaBed(400,300,{mood:'pain',arm:'belly'})+partner(720,372)+midwife(240,372),
+    fb:'El pujo dirigido con la glotis cerrada (Valsalva) no acorta el parto de forma relevante y cansa más. Con epidural se puede esperar a que la cabeza baje sola.'},
+   {t:'Esperar a que baje sola y empujar cuando el cuerpo lo pida',ok:true,bub:'¡Ya noto las ganas! Se ve la cabecita.',m:10,b:10,st:[-1,3],
+    fb:'Primero la fase pasiva: la cabeza desciende y rota sola. Después, pujo espontáneo, 3–4 pujos por contracción, soltando el aire. Compresas calientes y una salida lenta de la cabeza protegen el periné. El expulsivo puede durar hasta 3 h en el primer parto (más con epidural).'},
+   {t:'Hacer una episiotomía para ir más rápido',bub:'La episiotomía no se hace de rutina.',m:-10,b:0,
+    fb:'La episiotomía tiene un uso restrictivo, nunca rutinario: solo si hay riesgo de pérdida de bienestar fetal o un parto instrumental. Aquí madre y bebé están bien: toca esperar.'}],
+  run(c){if(c.actors)setActors(c.actors());if(c.st)setStation(c.st[0],c.st[1]);fx(bubble(480,40,c.bub,{w:250}));}
+},
+/* 9 */ {ph:1,time:'07:12',title:'¡Nace Leo!',
+  bg:()=>bgHospital('dawn'),
+  actors:()=>anaBed(400,300,{mood:'happy',arm:'hold',baby:true})+`<path id="cord" d="M 440 252 Q 470 300 520 296" stroke="#9FB8E8" stroke-width="6" fill="none" stroke-linecap="round" class="twinkle"/>`+partner(640,372),
+  widget:()=>'',
+  who:'Matrona',text:'Leo ya está sobre el pecho de Ana. <strong>¿Qué hacemos con el cordón?</strong>',
+  choices:[
+   {t:'Pinzarlo y cortarlo al instante',bub:'Leo se pierde la sangre que aún le llegaba por el cordón.',m:0,b:-10,
+    fb:'Se recomienda no pinzar antes de 1 minuto (o hasta que deje de latir): mejora las reservas de hierro del bebé.'},
+   {t:'Esperar al menos 1 minuto y que lo corte su pareja',ok:true,bub:'Un minuto… ¡y Dani corta el cordón!',m:5,b:10,
+    fb:'Pinzamiento tardío: no antes de 1 minuto. Después, alumbramiento con oxitocina profiláctica (10 UI) para prevenir la hemorragia; la placenta suele salir en menos de 30 minutos. Que la pareja corte el cordón se puede pedir en el plan de parto.'},
+   {t:'Tirar del cordón para que salga ya la placenta',bub:'¡Así no! Solo un profesional, con contratracción.',m:-15,b:0,
+    fb:'La tracción controlada del cordón es opcional y la hace un profesional entrenado, con contratracción encima del pubis. Primero se espera, se da oxitocina y se buscan los signos de desprendimiento.'}],
+  run(c){if(c.ok){fx(timerRing(560,110)+scissors(520,290));setTimeout(()=>{const k=$('cord');if(k){k.classList.remove('twinkle');k.setAttribute('d','M 440 252 Q 462 286 500 290');}addFx(bubble(470,20,c.bub,{w:240}));},2600);}
+    else fx(bubble(480,40,c.bub,{w:260}));}
+},
+/* 10 */ {ph:1,time:'Minuto 1',title:'Test de Apgar',
+  bg:()=>bgHospital('dawn')+`<rect width="800" height="450" fill="#1E1A31" opacity=".25"/>`,
+  actors:()=>bigBaby(250,300),
+  widget:()=>apgarCard(1),
+  who:'Matrona',text:'Tras un expulsivo largo, Leo está algo «perezoso». Su Apgar al minuto es <strong>6</strong>. ¿Qué necesita?',
+  choices:[
+   {t:'Nada, es totalmente normal',bub:'Con 4–6 sí necesita un poco de ayuda.',m:0,b:-10,
+    fb:'Normal es de 7 a 10. Con 4–6 necesita un poco de ayuda (estimular y secar); con 0–3, reanimación.'},
+   {t:'Secarle y estimularle: necesita un poco de ayuda',ok:true,bub:'¡Buaaa! A los 5 minutos: 9 puntos.',m:5,b:15,
+    fb:'Con 6 puntos se seca y se estimula. A los 5 minutos Leo llora con fuerza: 9 puntos, normal. Que tenga manos y pies azulados es habitual al principio. El Apgar valora la adaptación inmediata; no predice la salud futura.'},
+   {t:'Reanimación urgente',bub:'No hace falta tanto: la reanimación es para 0–3.',m:0,b:-5,
+    fb:'La reanimación se reserva para un Apgar de 0–3. Con 4–6 basta con un poco de ayuda: secar y estimular.'}],
+  run(c){if(c.ok){fx(`<g transform="translate(170,250)"><g class="rub"><rect x="-30" y="-20" width="70" height="44" rx="12" fill="#BDE7FF" stroke="#8EC5FF" stroke-width="3"/></g></g>`);
+      setTimeout(()=>{document.querySelectorAll('#nb .hand').forEach(h=>h.setAttribute('fill','#EDB48E'));const m=$('nbMouth');if(m)m.setAttribute('d','M -70 -20 Q -62 -4 -54 -20 Z');
+        fx(bubble(60,60,c.bub,{w:250}));setWidget(apgarCard(5));addFx(`<g transform="translate(250,180)">${hearts(0,0,4)}</g>`);},2000);}
+    else fx(bubble(60,60,c.bub,{w:250}));}
+},
+/* 11 */ {ph:2,time:'Primera hora',title:'Piel con piel',
+  bg:()=>bgHospital('day'),
+  actors:()=>anaBed(400,300,{mood:'calm',arm:'down',belly:false})+partner(640,372)+midwife(220,372),
+  widget:()=>'',
+  who:'Matrona',text:'Ana está cansada pero bien, con el útero duro a la altura del ombligo. <strong>¿Qué hacemos con Leo en esta primera hora?</strong>',
+  choices:[
+   {t:'Llevarle al nido para que Ana descanse',bub:'Leo llora en la cuna… se pierde el mejor momento.',m:-5,b:-10,
+    actors:()=>anaBed(400,300,{mood:'sad',arm:'down',belly:false})+partner(640,372)+midwife(220,372)+crib(140,250)+baby(140,226),
+    fb:'La primera hora cuenta: se recomienda piel con piel inmediato e ininterrumpido y empezar la lactancia, aprovechando que el bebé está muy despierto.'},
+   {t:'Piel con piel y primera toma',ok:true,bub:'Calentito, tranquilo… ¡y ya busca el pecho!',m:10,b:15,
+    actors:()=>anaBed(400,300,{mood:'happy',arm:'hold',belly:false,baby:true})+partner(640,372)+midwife(220,372),
+    fb:'El piel con piel regula la temperatura y la glucemia y favorece el vínculo; también puede hacerse tras una cesárea. La primera toma, en la primera hora. Mientras, se vigila el sangrado, la tensión y el periné, y se ponen la vitamina K y la profilaxis ocular.'},
+   {t:'Bañarle lo primero de todo',bub:'¡Brrr! Leo tirita fuera del pecho de mamá.',m:0,b:-10,
+    actors:()=>anaBed(400,300,{mood:'calm',arm:'down',belly:false})+partner(640,372)+midwife(220,372)+`<g transform="translate(150,240)"><ellipse cx="0" cy="20" rx="56" ry="20" fill="#BDE7FF"/><g class="shiver">${baby(0,0,{wrap:'#fff'})}</g></g>`,
+    fb:'El baño puede esperar. Lo prioritario en la primera hora es el contacto piel con piel: regula la temperatura del bebé, su glucemia y facilita la lactancia.'}],
+  run(c){if(c.actors)setActors(c.actors());fx(bubble(480,40,c.bub,{w:250}));if(c.ok)addFx(`<g transform="translate(440,200)">${hearts(0,0,6)}</g>`);}
+},
+/* 12 */ {ph:2,time:'Día 4 · en casa',title:'Lágrimas',
+  bg:()=>bgHome('day',10,0),
+  actors:()=>anaStand(400,372,{mood:'sad',arm:'hold',belly:false})+`<g transform="translate(436,240)">${baby(0,0)}</g>`,
+  widget:()=>'',
+  who:'Ana',text:'«Lloro sin motivo, estoy irritable y agotada. Ha subido la leche… y no entiendo qué me pasa.» <strong>¿Qué le pasa a Ana?</strong>',
+  onEnter(){addFx(cloud(300,110,false));},
+  choices:[
+   {t:'Es una depresión: necesita medicación ya',bub:'Al 4.º día, lo más probable es tristeza posparto.',m:-5,b:0,
+    fb:'La tristeza posparto afecta al 50–80 % de las madres, aparece hacia los días 3–5 y se resuelve sola en 2 semanas o menos. La depresión posparto (10–15 %) dura más de 2 semanas y es más intensa.'},
+   {t:'Es tristeza posparto: descanso y apoyo, y consultar si dura más de 2 semanas',ok:true,bub:'Dani prepara un té y se queda con Leo. Ana duerme un rato.',m:15,b:5,
+    actors:()=>anaStand(400,372,{mood:'happy',arm:'hold',belly:false})+`<g transform="translate(436,240)">${baby(0,0)}</g>`+partner(560,372,{arm:'cup'}),
+    fb:'Exacto: tristeza posparto, muy frecuente con la bajada hormonal. Necesita descanso, apoyo y acompañamiento. Si dura más de 2 semanas o le impide disfrutar o dormir, hay que consultar: la depresión posparto tiene tratamiento eficaz.'},
+   {t:'Tiene que aguantarse y no contárselo a nadie',bub:'Callarlo lo hace más pesado…',m:-15,b:0,
+    fb:'Hablarlo ayuda. La tristeza posparto mejora con descanso y apoyo. Si dura más de 2 semanas, puede ser una depresión posparto, que es frecuente y tiene tratamiento. Si aparecen ideas de hacerse daño a sí misma o al bebé, se debe pedir ayuda urgente.'}],
+  run(c){if(c.ok){fx(sunburst(300,110));setActors(c.actors());}else fx(cloud(300,110,true,''));addFx(bubble(500,40,c.bub,{w:250}));}
+},
+/* 13 */ {ph:2,time:'Semana 1',title:'Señales de alarma',
+  bg:()=>bgHome('day',19,0),
+  actors:()=>anaStand(420,372,{mood:'calm',arm:'phone',belly:false}),
+  widget:()=>card(20,20,250,120,'Loquios',`<g transform="translate(16,40)">${[['#C2384E','Rubra · días 1–4'],['#C98C7A','Serosa · hasta día 10'],['#F2E3B8','Alba · hasta 4–6 sem.']].map((r,i)=>`<g transform="translate(0,${i*24})"><rect width="26" height="16" rx="5" fill="${r[0]}"/><text x="36" y="12.5" font-size="12.5" fill="#2E2340" font-weight="700">${r[1]}</text></g>`).join('')}</g>`),
+  who:'Narrador',text:'Ana repasa lo que le explicó la matrona. <strong>¿Cuál de estas situaciones es motivo para consultar?</strong>',
+  choices:[
+   {t:'Loquios rosados-marrones al octavo día',bub:'Eso es normal: son loquios serosos.',m:-5,b:0,
+    fb:'Los loquios pasan de rojos (días 1–4) a rosados-marrones (hasta el día 10) y blanco-amarillentos (hasta 4–6 semanas). Esto es lo esperable.'},
+   {t:'Empapar una compresa cada hora o expulsar coágulos grandes',ok:true,m:10,b:0,call:true,
+    fb:'Correcto: es motivo para consultar. Otras señales: loquios malolientes o fiebre de 38 °C o más, dolor, calor o enrojecimiento en una pierna o en el pecho, y dolor de cabeza intenso o alteraciones visuales.'},
+   {t:'Notar que el útero está cada día más bajo',bub:'Normal: el útero baja ~1 cm al día (involución).',m:-5,b:0,
+    fb:'La involución uterina es normal: tras el parto el fondo del útero está a la altura del ombligo y va bajando día a día hasta dejar de palparse hacia las 2 semanas.'}],
+  run(c){if(c.call)fx(phoneCall(500,60,'Centro de salud'));else fx(bubble(480,40,c.bub,{w:250}));}
+}
+];
+
+/* ---------- motor ---------- */
+const st={i:-1,score:0,m:70,b:70,tries:0,res:[]};
+function setBg(s){$('L-bg').innerHTML=s;}
+function setActors(s){const L=$('L-actors');L.innerHTML=`<g class="fade">${s}</g>`;}
+function setWidget(s){$('L-widget').innerHTML=s;}
+function fx(s,keep){$('L-fx').innerHTML=s;}
+function addFx(s){$('L-fx').insertAdjacentHTML('beforeend',s);}
+function glowBelly(on){document.querySelectorAll('.bellyglow').forEach(e=>{e.classList.toggle('glow',on);});}
+function meters(dm,db){st.m=Math.max(5,Math.min(100,st.m+dm));st.b=Math.max(5,Math.min(100,st.b+db));paintMeters(dm,db);}
+function paintMeters(dm=0,db=0){const col=v=>v>60?'#5FD3A0':v>35?'#FFC857':'#FF6B6B';
+  $('barM').style.width=st.m+'%';$('barM').style.background=col(st.m);$('barB').style.width=st.b+'%';$('barB').style.background=col(st.b);
+  if(dm){$('mM').classList.remove('flash');void $('mM').offsetWidth;$('mM').classList.add('flash');}if(db){$('mB').classList.remove('flash');void $('mB').offsetWidth;$('mB').classList.add('flash');}}
+function paintPhases(){
+  $('phases').innerHTML=PH.map((p,k)=>{const idx=S.map((s,i)=>s.ph===k?i:-1).filter(i=>i>=0);
+    return `<div class="ph ${S[st.i]&&S[st.i].ph===k?'on':''}"><div class="nm">${p}</div><div class="dots">${idx.map(i=>`<i class="${st.res[i]===true?'done':st.res[i]===false?'miss':i===st.i?'cur':''}"></i>`).join('')}</div></div>`;}).join('');}
+function esc(s){return s;}
+
+function intro(){
+  st.i=-1;paintPhases();paintMeters();
+  setBg(bgHome('eve',7,0));setActors(anaStand(420,372,{mood:'happy',arm:'belly'})+partner(560,372,{arm:'reach'}));setWidget('');
+  fx(bubble(470,40,'¡Hola! Soy Ana, de 36 semanas. ¿Me acompañas hasta que conozcamos a Leo?',{w:260}));
+  $('tagTime').textContent='Inicio';$('tagTitle').textContent='La aventura de Ana';
+  $('dialog').innerHTML=`<div class="say"><span class="who">Cómo se juega</span><p>Vas a vivir <strong>14 momentos</strong> del preparto, el parto y el posparto. En cada uno eliges qué hacer y ves en la escena qué pasa. Las barras de <strong>Ana</strong> y del <strong>bebé</strong> suben o bajan según tus decisiones. Si fallas, puedes volver a intentarlo, pero solo cuentan los aciertos a la primera.</p></div>
+  <div class="row"><button class="btn" id="go">Empezar el viaje →</button></div>`;
+  $('go').onclick=()=>load(0);
+}
+function load(i){
+  st.i=i;st.tries=0;const s=S[i];paintPhases();
+  $('tagTime').textContent=s.time;$('tagTitle').textContent=s.title;
+  setBg(s.bg());setActors(s.actors());setWidget(s.widget());fx('');
+  s.onEnter&&s.onEnter();
+  renderChoices();
+}
+function renderChoices(tried=[]){
+  const s=S[st.i];
+  $('dialog').innerHTML=`<div class="say"><span class="who">${s.who}</span><p>${s.text}</p></div>
+   <div class="choices">${s.choices.map((c,k)=>`<button class="choice ${tried.includes(k)?'tried':''}" data-k="${k}" ${tried.includes(k)?'disabled':''}><span class="k">${'ABC'[k]}</span><span>${c.t}</span></button>`).join('')}</div>`;
+  document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>pick(+b.dataset.k,tried));
+}
+async function pick(k,tried){
+  const s=S[st.i],c=s.choices[k];
+  document.querySelectorAll('.choice').forEach(b=>{b.disabled=true;if(+b.dataset.k===k)b.classList.add('picked',c.ok?'ok':'ko');});
+  if(st.tries===0){st.res[st.i]=!!c.ok;if(c.ok){st.score++;$('score').textContent=st.score;}paintPhases();}
+  st.tries++;
+  s.run(c);
+  meters(c.m||0,c.b||0);
+  setTimeout(()=>addFx(bigMark(!!c.ok)),900);
+  await wait(c.ok?1700:1300);
+  const last=st.i===S.length-1;
+  const fb=document.createElement('div');fb.className='fb '+(c.ok?'ok':'ko');
+  fb.innerHTML=`<h3>${c.ok?(st.tries===1?'¡Bien hecho!':'¡Ahora sí!'):'Así no es lo mejor'}</h3><p>${c.fb}</p>${c.ok&&s.extra?s.extra:''}
+    <div class="row">${c.ok?`<button class="btn" id="next">${last?'Ver resultado →':'Siguiente momento →'}</button>`:`<button class="btn" id="retry">Volver a elegir</button>`}</div>`;
+  const ch=document.querySelector('.choices');ch.after(fb);
+  if(c.ok){$('next').onclick=()=>last?finish():load(st.i+1);$('next').focus({preventScroll:true});}
+  else{$('retry').onclick=()=>{const t=tried.concat(k);setBg(s.bg());setActors(s.actors());setWidget(s.widget());fx('');s.onEnter&&s.onEnter();renderChoices(t);};}
+  fb.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function finish(){
+  st.i=S.length;paintPhases();
+  $('tagTime').textContent='Final';$('tagTitle').textContent='¡Bienvenido, Leo!';
+  setBg(bgHome('day',12,0));setActors(anaStand(400,372,{mood:'happy',arm:'hold',belly:false})+`<g transform="translate(436,240)">${baby(0,0)}</g>`+partner(540,372,{arm:'reach'}));setWidget('');
+  fx(`<g transform="translate(450,190)">${hearts(0,0,8)}</g>`+sunburst(660,110));
+  const n=st.score, tot=S.length;
+  const msg=n>=12?'¡Lista para el parto!':n>=8?'¡Muy bien! Repasa los fallos y estarás a punto.':'Buen comienzo: vuelve a jugar para afianzar lo aprendido.';
+  const vf=[['Si rompo la bolsa con líquido claro, tengo que salir corriendo al hospital.','F','Con líquido claro puedes acudir con calma. Es urgente si es verde, marrón, con sangre o si el bebé no está cabeza abajo.'],
+   ['La epidural aumenta el riesgo de acabar en cesárea.','F','Las revisiones Cochrane no muestran más cesáreas. Sí puede alargar el expulsivo.'],
+   ['Caminar y cambiar de postura puede acortar la dilatación.','V','Las posturas verticales y el movimiento ayudan al descenso del bebé.'],
+   ['Hay que dilatar 1 cm por hora o se intervendrá.','F','Esa regla ya no se usa: la OMS acepta ritmos más lentos si madre y bebé están bien.'],
+   ['El piel con piel también puede hacerse después de una cesárea.','V','Si madre y bebé están bien, muchos hospitales lo hacen en el quirófano.'],
+   ['Si la tristeza posparto dura más de dos semanas, hay que consultarlo.','V','Puede ser una depresión posparto, que tiene tratamiento eficaz.']];
+  $('dialog').innerHTML=`<div class="end"><div><h2>${n}/${tot} aciertos a la primera</h2><p style="margin:0 0 10px">${msg} Ana: ${st.m}% · Leo: ${st.b}%.</p>
+    <ul><li>La fase latente se pasa mejor en casa; la activa empieza hacia los 5 cm.</li><li>Cada parto tiene su ritmo: la duración por sí sola no obliga a intervenir.</li><li>Moverse, el agua caliente y el acompañamiento continuo reducen el dolor.</li><li>La epidural es eficaz y segura; conocer sus efectos ayuda a decidir.</li><li>Piel con piel, pinzamiento tardío y lactancia precoz: la primera hora cuenta.</li><li>Sangrado, líquido teñido, fiebre o menos movimientos: acudir sin esperar.</li></ul>
+    <div class="row" style="margin-top:14px"><button class="btn" id="again">Jugar otra vez</button></div></div>
+    <div><h2>Bonus: ¿verdadero o falso?</h2><p class="note" style="margin:0 0 8px">Pulsa cada tarjeta para descubrir la respuesta.</p><div class="vfgrid">${vf.map((v,i)=>`<button class="vf" data-i="${i}"><b>¿V o F?</b>${v[0]}</button>`).join('')}</div></div></div>`;
+  document.querySelectorAll('.vf').forEach(b=>b.onclick=()=>{const v=vf[+b.dataset.i];b.classList.add(v[1]);b.innerHTML=`<b>${v[1]==='V'?'VERDADERO':'FALSO'}</b>${v[2]}`;});
+  $('again').onclick=()=>{st.score=0;st.m=70;st.b=70;st.res=[];$('score').textContent=0;intro();};
+}
+const ks=document.createElement('style');ks.textContent='@keyframes wobbleBig{0%{transform:rotate(40deg)}50%{transform:rotate(-30deg)}100%{transform:rotate(40deg)}}';document.head.appendChild(ks);
+$('total').textContent=S.length;
+intro();
+</script>
+</body>
+</html>
